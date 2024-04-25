@@ -36,7 +36,7 @@ class AuthenticationService(BaseService):
 
         return header.replace("Authorization: Bearer ", "")
 
-    def generate_token(self, sub: int, secret: str = None, **params) -> str:
+    def generate_token(self, sub: str, secret: str = None, **params) -> str:
         if not secret:
             secret = get_app_secret()
 

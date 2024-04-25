@@ -18,10 +18,6 @@ def generate_mock_name(length: int = 10):
     return "".join(random.choices(ascii_lowercase + digits, k=length))
 
 
-def generate_mock_email(domain="mockemail.com", length: int = 10):
-    return f"{generate_mock_name(length)}@{domain}"
-
-
 def generate_mock_plain_password(length: int = 10) -> str:
     return "".join(random.choices(ascii_lowercase + digits, k=length))
 
@@ -66,7 +62,7 @@ async def test_session(event_loop, test_db_engine: AsyncEngine) -> AsyncSession:
 async def mock_user(test_session: AsyncSession) -> User:
     service = UserService(test_session)
     user = await service.create(
-        email=generate_mock_email(),
+        username=f"user_{generate_mock_name()}",
         plain_password=generate_mock_plain_password()
     )
 
@@ -80,6 +76,7 @@ async def mock_user(test_session: AsyncSession) -> User:
 async def mock_client(test_session: AsyncSession, mock_user: User) -> Client:
     service = ClientService(test_session)
     client = await service.create(
+        name=f"client_{generate_mock_name()}",
         user=mock_user
     )
 

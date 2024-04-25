@@ -1,10 +1,13 @@
+import re
 from datetime import datetime
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy.orm import mapped_column, Mapped, relationship, validates
 
-from models.base import Base
+from models.base import Base, FieldValidationError
 from models.utils import generate_uuid
+
+USERNAME_REGEX = r"^[a-zA-Z0-9_]{10,255}$"
 
 
 class Client(Base):
@@ -12,6 +15,8 @@ class Client(Base):
 
     id: Mapped[int] = mapped_column(
         primary_key=True)
+    name: Mapped[str] = mapped_column(
+        unique=True, index=True, nullable=False)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     secret: Mapped[str] = mapped_column(
@@ -24,3 +29,9 @@ class Client(Base):
 
     user: Mapped["User"] = relationship(
         back_populates="clients")
+
+    @validates("name")
+    def validate_username(self, key, username):
+        if not re.match(USERNAME_REGEX, username):
+            raise FieldValidationError("Invalid name")
+        return username

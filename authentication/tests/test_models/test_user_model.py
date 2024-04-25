@@ -5,14 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import FieldValidationError
 from models.user import User
-from tests.conftest import generate_mock_email, generate_mock_password
+from tests.conftest import generate_mock_password, generate_mock_name
 
 
 async def test_create(test_session: AsyncSession):
-    email = generate_mock_email()
+    username = f"user_{generate_mock_name()}"
     password = generate_mock_password()
     user = User(
-        email=email,
+        username=username,
         password=password
     )
     test_session.add(user)
@@ -24,7 +24,7 @@ async def test_create(test_session: AsyncSession):
     await test_session.commit()
 
 
-async def test_email_constraint(test_session: AsyncSession):
+async def test_username_constraint(test_session: AsyncSession):
     password = generate_mock_password()
 
     user = User(
@@ -37,10 +37,10 @@ async def test_email_constraint(test_session: AsyncSession):
 
 
 async def test_password_constraint(test_session: AsyncSession):
-    email = generate_mock_email()
+    username = f"user_{generate_mock_name()}"
 
     user = User(
-        email=email
+        username=username
     )
     test_session.add(user)
     with pytest.raises(IntegrityError):
@@ -48,24 +48,24 @@ async def test_password_constraint(test_session: AsyncSession):
     await test_session.rollback()
 
 
-async def test_email_validation():
-    not_valid_email = "not_valid"
+async def test_username_validation():
+    not_valid_username = "not_valid@asd!!"
     password = generate_mock_password()
 
     with pytest.raises(FieldValidationError):
         User(
-            email=not_valid_email,
+            username=not_valid_username,
             password=password
         )
 
 
 async def test_password_validation():
-    email = generate_mock_email()
+    username = f"user-{generate_mock_name()}"
     not_valid_password = "not_valid$password"
 
     with pytest.raises(FieldValidationError):
         User(
-            email=email,
+            username=username,
             password=not_valid_password
         )
 

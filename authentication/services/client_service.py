@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from models.client import Client
 from models.user import User
-from services.base import ModelService
+from services.base import ModelService, UniquenessError
 
 
 class ClientService(ModelService):
@@ -15,8 +15,12 @@ class ClientService(ModelService):
             .where(Client.id == instance.id)
             .options(selectinload(Client.user)))
 
-    async def create(self, user: User, commit: bool = True, **kwargs) -> Client:
+    async def create(self, name: str, user: User, commit: bool = True, **kwargs) -> Client:
+        if await self.session.scalar(select(Client).where(Client.name == name)):
+            raise UniquenessError(f"Client with {name} already exists")
+
         instance = Client(
+            name=name,
             user=user,
             **kwargs
         )

@@ -19,9 +19,9 @@ class UserService(ModelService):
             .where(User.id == instance.id)
             .options(selectinload(User.clients)))
 
-    async def create(self, email: str, plain_password: str, commit: bool = True, **kwargs) -> User:
-        if await self.session.scalar(select(User).where(User.email == email)):
-            raise UniquenessError(f"User with {email} already exists")
+    async def create(self, username: str, plain_password: str, commit: bool = True, **kwargs) -> User:
+        if await self.session.scalar(select(User).where(User.username == username)):
+            raise UniquenessError(f"User with username {username} already exists")
 
         validators = get_password_validators()
         iterations = get_password_iterations()
@@ -40,7 +40,7 @@ class UserService(ModelService):
         )
 
         instance = User(
-            email=email,
+            username=username,
             password=formatted_password,
             **kwargs
         )
@@ -56,17 +56,6 @@ class UserService(ModelService):
         await self.session.execute(qs)
         if commit:
             await self.session.commit()
-
-    async def set_email(self, instance: User, email: str, commit: bool = True) -> User:
-        if await self.session.scalar(select(User).where(User.email == email)):
-            raise UniquenessError(f"User with {email} already exists")
-
-        instance.email = email
-        self.session.add(instance)
-        if commit:
-            await self.session.commit()
-
-        return instance
 
     async def set_password(self, instance: User, plain_password: str, commit: bool = True) -> User:
         validators = get_password_validators()
@@ -103,14 +92,14 @@ class UserService(ModelService):
         authentication_service = AuthenticationService()
         return authentication_service.generate_token(sub=instance.id)
 
-    async def get_user_by_email(self, email: str) -> User:
-        return await self.session.scalar(select(User).where(User.email == email))
-
-    async def get_user_by_token(self, token: str) -> User:
-        authentication_service = AuthenticationService()
-        decoded_token = authentication_service.decode_token(token)
-
-        user_id = decoded_token.get("sub")
-        return await self.session.scalar(
-            select(User).where(User.id == user_id)
-        )
+    async def get_user_by_username(self, username: str) -> User:
+        return await self.session.scalar(select(User).where(User.username == username))
+    #
+    # async def get_user_by_token(self, token: str) -> User:
+    #     authentication_service = AuthenticationService()
+    #     decoded_token = authentication_service.decode_token(token)
+    #
+    #     user_id = decoded_token.get("sub")
+    #     return await self.session.scalar(
+    #         select(User).where(User.id == user_id)
+    #     )

@@ -6,8 +6,7 @@ from sqlalchemy.orm import validates, mapped_column, Mapped, relationship
 
 from models.base import Base, FieldValidationError
 
-EMAIL_REGEX = r"^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9]" \
-              r"(?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$"
+USERNAME_REGEX = r"^[a-zA-Z0-9_]{3,20}$"
 PASSWORD_REGEX = r"^[a-zA-Z0-9_]+\$[0-9]+\$[a-zA-Z0-9_\/+=]+=*\$[a-zA-Z0-9\/+=]+=*$"
 
 
@@ -16,7 +15,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(
         primary_key=True)
-    email: Mapped[str] = mapped_column(
+    username: Mapped[str] = mapped_column(
         unique=True, index=True, nullable=False)
     password: Mapped[str] = mapped_column(
         index=True, nullable=False)
@@ -26,11 +25,11 @@ class User(Base):
     clients: Mapped[Set["Client"]] = relationship(
         back_populates="user")
 
-    @validates("email")
-    def validate_email(self, key, email):
-        if not re.match(EMAIL_REGEX, email):
-            raise FieldValidationError("Invalid email address format")
-        return email
+    @validates("username")
+    def validate_username(self, key, username):
+        if not re.match(USERNAME_REGEX, username):
+            raise FieldValidationError("Invalid username")
+        return username
 
     @validates("password")
     def validate_password(self, key, password):

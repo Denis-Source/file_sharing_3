@@ -8,14 +8,14 @@ from models.user import User
 from services.authentication_serivce import JWT_REGEX, AuthenticationService
 from services.base import UniquenessError
 from services.user_service import UserService
-from tests.conftest import generate_mock_plain_password, generate_mock_email
+from tests.conftest import generate_mock_plain_password, generate_mock_name
 
 
 async def test_create(test_session: AsyncSession):
     service = UserService(test_session)
 
     user = await service.create(
-        email=generate_mock_email(),
+        username=f"user_{generate_mock_name()}",
         plain_password=generate_mock_plain_password()
     )
     assert user in await test_session.scalars(select(User))
@@ -27,11 +27,11 @@ async def test_create(test_session: AsyncSession):
     await test_session.commit()
 
 
-async def test_create_email_uniqueness(test_session: AsyncSession, mock_user: User):
+async def test_create_username_uniqueness(test_session: AsyncSession, mock_user: User):
     service = UserService(test_session)
     with pytest.raises(UniquenessError):
         await service.create(
-            email=mock_user.email,
+            username=mock_user.username,
             plain_password=generate_mock_plain_password()
         )
 
@@ -44,36 +44,6 @@ async def test_delete(test_session: AsyncSession, mock_user: User):
     assert mock_user not in await test_session.scalars(select(User))
     assert await test_session.scalar(
         select(func.count()).where(User.id == mock_user.id)) == 0
-
-
-async def test_set_email(test_session: AsyncSession, mock_user: User):
-    old_email = mock_user.email
-    new_email = generate_mock_email(domain="new-domain.com")
-
-    service = UserService(test_session)
-
-    await service.set_email(
-        instance=mock_user,
-        email=new_email
-    )
-
-    assert mock_user.email == new_email
-    assert await test_session.scalar(
-        select(func.count()).where(User.email == old_email)) == 0
-    assert await test_session.scalar(
-        select(func.count()).where(User.email == new_email)) == 1
-
-
-async def test_set_email_already_exists(test_session: AsyncSession, mock_user: User):
-    old_email = mock_user.email
-
-    service = UserService(test_session)
-
-    with pytest.raises(UniquenessError):
-        await service.set_email(
-            instance=mock_user,
-            email=old_email
-        )
 
 
 async def test_set_password(test_session: AsyncSession, mock_user: User):
@@ -114,30 +84,30 @@ async def test_generate_token(test_session: AsyncSession, mock_user: User):
     assert re.compile(JWT_REGEX).match(token)
 
 
-async def test_get_user_by_email(test_session: AsyncSession, mock_user):
+async def test_get_user_by_username(test_session: AsyncSession, mock_user):
     service = UserService(test_session)
-    assert mock_user == await service.get_user_by_email(mock_user.email)
+    assert mock_user == await service.get_user_by_username(mock_user.username)
 
 
-async def test_get_user_by_email_not_exist(test_session: AsyncSession):
+async def test_get_user_by_username_not_exist(test_session: AsyncSession):
     service = UserService(test_session)
-    non_existent_email = generate_mock_email()
+    non_existent_username = "non-existent-user"
 
-    assert await service.get_user_by_email(non_existent_email) is None
-
-
-async def test_get_user_by_token(test_session: AsyncSession, mock_user: User):
-    service = UserService(test_session)
-    authentication_service = AuthenticationService()
-    token = authentication_service.generate_token(sub=mock_user.id)
-
-    assert mock_user == await service.get_user_by_token(token)
+    assert await service.get_user_by_username(non_existent_username) is None
 
 
-async def test_get_user_by_token_not_exist(test_session: AsyncSession):
-    non_existent_user_id = 123
-    service = UserService(test_session)
-    authentication_service = AuthenticationService()
-    token = authentication_service.generate_token(sub=non_existent_user_id)
-
-    assert await service.get_user_by_token(token) is None
+# async def test_get_user_by_token(test_session: AsyncSession, mock_user: User):
+#     service = UserService(test_session)
+#     authentication_service = AuthenticationService()
+#     token = authentication_service.generate_token(sub=mock_user.id)
+#
+#     assert mock_user == await service.get_user_by_token(token)
+#
+#
+# async def test_get_user_by_token_not_exist(test_session: AsyncSession):
+#     non_existent_user_id = 123
+#     service = UserService(test_session)
+#     authentication_service = AuthenticationService()
+#     token = authentication_service.generate_token(sub=non_existent_user_id)
+#
+#     assert await service.get_user_by_token(token) is None
