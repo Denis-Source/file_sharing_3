@@ -1,0 +1,16 @@
+psycopg2
+sqlalchemy[asyncio]
+sqlalchemy_utils
+asyncpg
+alembic
+
+pytest
+pytest_asyncio
+pydantic[email]
+
+pyjwt
+
+python-multipart
+fastapi
+uvicorn[standard]
+httpx

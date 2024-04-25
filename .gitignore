@@ -1,0 +1,23 @@
+# Virtual envs
+env
+venv
+
+# Media/Static
+media
+static
+static_root
+
+# Local databases
+*.sqlite3
+*.db
+
+# pyc caches
+.pyc
+__pycache__
+.pytest_*
+
+# IDE
+.idea
+
+# env files
+.env

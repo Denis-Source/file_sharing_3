@@ -1,0 +1,10 @@
+[flake8]
+exclude = .git,__pycache__,venv,.idea,migrations
+max-complexity = 10
+max-line-length = 120
+inline-quotes = "
+ignore =
+    # random lib usage
+    DUO102
+    # weird undefined names
+    F821

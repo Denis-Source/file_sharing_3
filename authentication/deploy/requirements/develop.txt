@@ -1,0 +1,7 @@
+-r base.txt
+
+flake8~=7.0.0
+flake8-quotes~=3.3.2
+flake8-mutable~=1.2.0
+dlint~=0.14.1
+pep8-naming~=0.13.3
