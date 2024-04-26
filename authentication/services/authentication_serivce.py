@@ -1,7 +1,7 @@
 from datetime import timedelta, datetime
 
 import jwt
-from jwt import DecodeError
+from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import APP_NAME
@@ -61,7 +61,7 @@ class AuthenticationService(BaseService):
                 secret,
                 JWT_ALGORITHM
             )
-        except DecodeError:
+        except InvalidTokenError:
             raise AuthenticationError("Invalid token")
 
         if "sub" not in decoded_token:
@@ -106,4 +106,3 @@ class AuthenticationService(BaseService):
             raise AuthenticationError("User not found")
 
         return user
-
