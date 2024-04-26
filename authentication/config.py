@@ -15,7 +15,7 @@ class ADAPTERS(str, Enum):
     SYNC = "postgresql+psycopg2"
 
 
-APP_NAME = "metadata_service"
+APP_NAME = "authentication_service"
 
 
 def get_root_dir():

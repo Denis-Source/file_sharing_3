@@ -17,7 +17,7 @@ class ClientService(ModelService):
 
     async def create(self, name: str, user: User, commit: bool = True, **kwargs) -> Client:
         if await self.session.scalar(select(Client).where(Client.name == name)):
-            raise UniquenessError(f"Client with {name} already exists")
+            raise UniquenessError(f"Client with name {name} already exists")
 
         instance = Client(
             name=name,
@@ -29,6 +29,12 @@ class ClientService(ModelService):
             await self.session.commit()
             instance = await self._preload_relationships(instance)
         return instance
+
+    # TODO add test
+    async def get_client_by_secret(self, secret: str) -> Client:
+        return await self.session.scalar(
+            select(Client).where(Client.secret == secret)
+        )
 
     async def delete(self, instance_id: int, commit: bool = True):
         qs = delete(Client).where(Client.id == instance_id)

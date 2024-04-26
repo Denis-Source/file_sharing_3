@@ -60,6 +60,11 @@ async def test_set_last_authenticated(test_session: AsyncSession, mock_client: C
     assert mock_client.last_authenticated == new_date
 
     assert await test_session.scalar(
-        select(func.count()).where(Client.last_authenticated == old_date)) == 0
+        select(func.count()).where(
+            Client.id == mock_client.id,
+            Client.last_authenticated == old_date
+        )) == 0
     assert await test_session.scalar(
-        select(func.count()).where(Client.last_authenticated == new_date)) == 1
+        select(func.count()).where(
+            Client.id == mock_client.id,
+            Client.last_authenticated == new_date)) == 1

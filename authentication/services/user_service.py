@@ -4,7 +4,6 @@ from sqlalchemy.orm import selectinload
 
 from config import get_password_iterations, get_password_algorithm, get_password_validators
 from models.user import User
-from services.authentication_serivce import AuthenticationService
 from services.base import ModelService, UniquenessError
 from services.password_service.service import PasswordService
 
@@ -88,18 +87,5 @@ class UserService(ModelService):
             plain_password=plain_password
         )
 
-    async def generate_token(self, instance: User) -> str:
-        authentication_service = AuthenticationService()
-        return authentication_service.generate_token(sub=instance.id)
-
     async def get_user_by_username(self, username: str) -> User:
         return await self.session.scalar(select(User).where(User.username == username))
-    #
-    # async def get_user_by_token(self, token: str) -> User:
-    #     authentication_service = AuthenticationService()
-    #     decoded_token = authentication_service.decode_token(token)
-    #
-    #     user_id = decoded_token.get("sub")
-    #     return await self.session.scalar(
-    #         select(User).where(User.id == user_id)
-    #     )

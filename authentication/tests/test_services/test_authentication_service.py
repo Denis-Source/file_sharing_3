@@ -3,34 +3,7 @@ import pytest
 from jwt import InvalidSignatureError, DecodeError, ExpiredSignatureError
 
 from models.user import User
-from services.authentication_serivce import AuthenticationService, HeaderValueError, JWT_ALGORITHM
-
-
-def test_generate_header():
-    service = AuthenticationService()
-    token = "token"
-
-    assert service.generate_header(token) == f"Authorization: Bearer {token}"
-
-
-def test_parse_header_success():
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI" \
-            "6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ" \
-            ".SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-    header = f"Authorization: Bearer {token}"
-    service = AuthenticationService()
-
-    assert service.parse_header(header) == token
-
-
-def test_parse_header_wrong_format():
-    token = "d4b9e9e684a8567be2275b2249fb4ca3d093580a"
-    header = f"Token {token}"
-    service = AuthenticationService()
-
-    with pytest.raises(HeaderValueError):
-        service.parse_header(header)
+from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM
 
 
 def test_encode(mock_user: User):
