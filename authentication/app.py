@@ -16,6 +16,8 @@ for router in [auth_router, user_router, client_router]:
     app.include_router(router)
 
 
+# TODO handle exception in dev mode
+# TODO do something about content (does not show in a response)
 @app.exception_handler(Exception)
 async def server_error(request: Request, error: Exception):
     traceback.print_exc()

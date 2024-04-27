@@ -38,14 +38,15 @@ async def test_name_uniqueness(test_session: AsyncSession, mock_user: User, mock
         )
 
 
-async def test_delete(test_session: AsyncSession, mock_client: Client):
+async def test_get_client_by_secret_success(test_session: AsyncSession, mock_client: Client):
     service = ClientService(test_session)
+    assert mock_client.id == (await service.get_client_by_secret(mock_client.secret)).id
 
-    await service.delete(mock_client.id)
 
-    assert mock_client not in await test_session.scalars(select(Client))
-    assert await test_session.scalar(
-        select(func.count()).where(Client.id == mock_client.id)) == 0
+async def test_get_client_by_secret_not_exist(test_session: AsyncSession):
+    non_existent_secret = "non_existent_secret"
+    service = ClientService(test_session)
+    assert not await service.get_client_by_secret(non_existent_secret)
 
 
 async def test_set_last_authenticated(test_session: AsyncSession, mock_client: Client):
@@ -68,3 +69,13 @@ async def test_set_last_authenticated(test_session: AsyncSession, mock_client: C
         select(func.count()).where(
             Client.id == mock_client.id,
             Client.last_authenticated == new_date)) == 1
+
+
+async def test_delete(test_session: AsyncSession, mock_client: Client):
+    service = ClientService(test_session)
+
+    await service.delete(mock_client.id)
+
+    assert mock_client not in await test_session.scalars(select(Client))
+    assert await test_session.scalar(
+        select(func.count()).where(Client.id == mock_client.id)) == 0

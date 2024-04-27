@@ -30,18 +30,10 @@ class ClientService(ModelService):
             instance = await self._preload_relationships(instance)
         return instance
 
-    # TODO add test
     async def get_client_by_secret(self, secret: str) -> Client:
         return await self.session.scalar(
             select(Client).where(Client.secret == secret)
         )
-
-    async def delete(self, instance_id: int, commit: bool = True):
-        qs = delete(Client).where(Client.id == instance_id)
-
-        await self.session.execute(qs)
-        if commit:
-            await self.session.commit()
 
     async def set_last_authenticated(self, instance: Client, date: datetime = None, commit: bool = True) -> Client:
         if not date:
@@ -53,3 +45,10 @@ class ClientService(ModelService):
             await self.session.commit()
 
         return instance
+
+    async def delete(self, instance_id: int, commit: bool = True):
+        qs = delete(Client).where(Client.id == instance_id)
+
+        await self.session.execute(qs)
+        if commit:
+            await self.session.commit()
