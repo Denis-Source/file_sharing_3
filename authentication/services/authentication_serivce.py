@@ -23,12 +23,21 @@ OPTIONS = {
     "verify_aud": False
 }
 
+TOKEN_ISS = "iss"
+TOKEN_SUB = "sub"
+TOKEN_EXP = "exp"
+TOKEN_IAT = "iat"
+
 
 class AuthenticationError(ServiceError):
     pass
 
 
-# TODO tests
+class TokenError(AuthenticationError):
+    def __init__(self):
+        self.message = "Token error"
+
+
 class AuthenticationService(BaseService):
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -40,10 +49,10 @@ class AuthenticationService(BaseService):
 
         return jwt.encode(
             {
-                "iss": APP_NAME,
-                "sub": sub,
-                "exp": datetime.utcnow() + timedelta(days=60),
-                "iat": datetime.utcnow(),
+                TOKEN_SUB: sub,
+                TOKEN_ISS: APP_NAME,
+                TOKEN_IAT: datetime.utcnow(),
+                TOKEN_EXP: datetime.utcnow() + timedelta(days=60),
                 **params
             },
             secret,
@@ -61,22 +70,28 @@ class AuthenticationService(BaseService):
                 secret,
                 JWT_ALGORITHM
             )
-        except InvalidTokenError:
-            raise AuthenticationError("Invalid token")
+        except InvalidTokenError as e:
+            raise TokenError from e
 
-        if "sub" not in decoded_token:
-            # TODO make a separate exception
-            raise AuthenticationError("Invalid Token")
+        if TOKEN_SUB not in decoded_token or TOKEN_EXP not in decoded_token:
+            raise TokenError
 
-        if "exp" not in decoded_token:
-            raise AuthenticationError("Invalid Token")
-
-        if decoded_token.get("iss") != APP_NAME:
-            raise AuthenticationError("Invalid Token")
+        if decoded_token.get(TOKEN_ISS) != APP_NAME:
+            raise TokenError
 
         return decoded_token
 
-    async def create_oauth_token(self, username: str, password: str, client_id: int, client_secret: str):
+    async def create_oauth_token(
+            self,
+            username: str,
+            password: str,
+            client_id: int,
+            client_secret: str,
+            secret: str = None
+    ):
+        if not secret:
+            secret = get_app_secret()
+
         user_service = UserService(self.session)
         user = await user_service.get_user_by_username(username)
         if not user:
@@ -93,12 +108,12 @@ class AuthenticationService(BaseService):
 
         return self.generate_token(
             sub=user.username,
-            secret=get_app_secret()
+            secret=secret
         )
 
-    async def get_user_by_token(self, token: str) -> User:
+    async def get_user_by_token(self, token: str, secret: str = None) -> User:
         user_service = UserService(self.session)
-        decoded_token = self.decode_token(token)
+        decoded_token = self.decode_token(token, secret)
 
         username = decoded_token.get("sub")
         user = await user_service.get_user_by_username(username=username)

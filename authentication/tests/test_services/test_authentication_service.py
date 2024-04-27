@@ -1,15 +1,20 @@
 import jwt
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import APP_NAME
+from models.client import Client
 from models.user import User
-from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, AuthenticationError
+from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, TokenError, AuthenticationError
+from services.user_service import UserService
+from tests.conftest import generate_mock_password
 
 
 def test_encode(mock_user: User):
     secret = "test_secret"
 
     token = AuthenticationService.generate_token(
-        sub=mock_user.id,
+        sub=mock_user.username,
         secret=secret
     )
 
@@ -19,7 +24,7 @@ def test_encode(mock_user: User):
         JWT_ALGORITHM
     )
 
-    assert decoded_token.get("sub") == mock_user.id
+    assert decoded_token.get("sub") == mock_user.username
 
 
 def test_decode():
@@ -45,7 +50,7 @@ def test_decode_invalid_signature():
             "2NzExMDAsImV4cCI6MjAwMDAwMDAwMDB9" \
             ".HXHmIoegomXWsgWOVGlh-QmIzu_Hld68LywdCD7AjCZ"
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(TokenError):
         AuthenticationService.decode_token(token, secret)
 
 
@@ -57,7 +62,7 @@ def test_decode_invalid_exp():
             "2NzExMDAsImV4cCI6MH0" \
             ".VdcY5GZkIT2MLPPRZ_ECtTed9m_LbeA5x0Jit_WS5Os"
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(TokenError):
         AuthenticationService.decode_token(token, secret)
 
 
@@ -69,7 +74,7 @@ def test_decode_missing_exp():
             "2NzExMDB9" \
             ".ZGcqMyiTpKY9A2yjQ4XTokiLXKDmKIQYZmqEp-Ce-8I"
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(TokenError):
         AuthenticationService.decode_token(token, secret)
 
 
@@ -80,7 +85,7 @@ def test_decode_invalid_iss():
             "xMTY3MTEwMCwiZXhwIjoyMDAwMDAwMDAwMH0" \
             ".N3L45Fx4LrhqzdgO5TMYaDkmU-OKHYDUjUDU36wHXug"
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(TokenError):
         AuthenticationService.decode_token(token, secret)
 
 
@@ -92,7 +97,7 @@ def test_decode_missing_iss():
             "iZXhwIjoyMDAwMDAwMDAwMH0" \
             ".1VF2pRozuF0p7bRN7aU5Ed4MPYOADnrkxbqCWM9_L9Y"
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(TokenError):
         AuthenticationService.decode_token(token, secret)
 
 
@@ -104,7 +109,7 @@ def test_decode_invalid_format():
             "xQ6rmPEgPsYj8n4XICbLSw_CuOQ6FqVqFNL" \
             "HTQbdQhY"
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(TokenError):
         AuthenticationService.decode_token(token, secret)
 
 
@@ -114,5 +119,151 @@ def test_decode_no_sub():
             ".eyJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9" \
             ".nfxWdUayk54niAULlEOjvac-fUdltdWIYY1sg1Yd5Ts"
 
-    with pytest.raises(AuthenticationError):
+    with pytest.raises(TokenError):
         AuthenticationService.decode_token(token, secret)
+
+
+async def test_create_oauth_token_success(test_session: AsyncSession, mock_user: User, mock_client: Client):
+    secret = "test_secret"
+
+    user_service = UserService(test_session)
+    password = generate_mock_password()
+    await user_service.set_password(mock_user, password)
+
+    auth_service = AuthenticationService(test_session)
+    token = await auth_service.create_oauth_token(
+        username=mock_user.username,
+        password=password,
+        client_id=mock_client.id,
+        client_secret=mock_client.secret,
+        secret=secret
+    )
+
+    decoded_token = jwt.decode(
+        token,
+        secret,
+        JWT_ALGORITHM
+    )
+
+    assert await user_service.check_password(mock_user, password)
+    assert decoded_token.get("sub") == mock_user.username
+
+
+async def test_create_oauth_token_user_not_exist(test_session: AsyncSession, mock_client: Client):
+    secret = "test_secret"
+
+    username = "non_existent_username"
+    password = generate_mock_password()
+
+    auth_service = AuthenticationService(test_session)
+    with pytest.raises(AuthenticationError):
+        token = await auth_service.create_oauth_token(
+            username=username,
+            password=password,
+            client_id=mock_client.id,
+            client_secret=mock_client.secret,
+            secret=secret
+        )
+
+
+async def test_create_oauth_token_wrong_password(test_session: AsyncSession, mock_user: User, mock_client: Client):
+    secret = "test_secret"
+
+    wrong_password = generate_mock_password()
+
+    auth_service = AuthenticationService(test_session)
+    user_service = UserService(test_session)
+
+    assert not await user_service.check_password(mock_user, wrong_password)
+    with pytest.raises(AuthenticationError):
+        token = await auth_service.create_oauth_token(
+            username=mock_user.username,
+            password=wrong_password,
+            client_id=mock_client.id,
+            client_secret=mock_client.secret,
+            secret=secret
+        )
+
+
+async def test_create_oauth_token_wrong_client_secret(test_session: AsyncSession, mock_user: User,
+                                                      mock_client: Client):
+    secret = "test_secret"
+    user_service = UserService(test_session)
+    auth_service = AuthenticationService(test_session)
+    password = generate_mock_password()
+    await user_service.set_password(mock_user, password)
+
+    wrong_client_secret = "wrong_client_secret"
+
+    assert await user_service.check_password(mock_user, password)
+    assert wrong_client_secret != mock_client.secret
+    with pytest.raises(AuthenticationError):
+        token = await auth_service.create_oauth_token(
+            username=mock_user.username,
+            password=password,
+            client_id=mock_client.id,
+            client_secret=wrong_client_secret,
+            secret=secret
+        )
+
+
+async def test_create_oauth_token_wrong_client_id(test_session: AsyncSession, mock_user: User, mock_client: Client):
+    secret = "test_secret"
+    user_service = UserService(test_session)
+    auth_service = AuthenticationService(test_session)
+    password = generate_mock_password()
+    await user_service.set_password(mock_user, password)
+
+    non_existent_id = 1e9 + 42
+
+    assert await user_service.check_password(mock_user, password)
+    with pytest.raises(AuthenticationError):
+        token = await auth_service.create_oauth_token(
+            username=mock_user.username,
+            password=password,
+            client_id=non_existent_id,
+            client_secret=mock_client.secret,
+            secret=secret
+        )
+
+
+async def test_get_user_by_token_success(test_session: AsyncSession, mock_user: User):
+    secret = "test_secret"
+    auth_service = AuthenticationService(test_session)
+    token = jwt.encode(
+        {
+            "sub": mock_user.username,
+            "iss": APP_NAME,
+            "iat": 1711671100,
+            "exp": 20000000000
+        },
+        secret,
+        JWT_ALGORITHM
+    )
+
+    user = await auth_service.get_user_by_token(
+        token=token,
+        secret=secret
+    )
+    assert user.id == mock_user.id
+
+
+async def test_get_user_by_token_user_not_exist(test_session: AsyncSession, mock_client: Client):
+    secret = "test_secret"
+    auth_service = AuthenticationService(test_session)
+    non_existent_username = "non_existent_username"
+    token = jwt.encode(
+        {
+            "sub": non_existent_username,
+            "iss": APP_NAME,
+            "iat": 1711671100,
+            "exp": 20000000000
+        },
+        secret,
+        JWT_ALGORITHM
+    )
+    with pytest.raises(AuthenticationError):
+        await auth_service.get_user_by_token(
+            token=token,
+            secret=secret
+        )

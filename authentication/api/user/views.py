@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 
-@router.get("/e/", response_model=UserResponse)
+@router.get("/profile/", response_model=UserResponse)
 async def read_users_me(
         current_user: Annotated[User, Depends(authenticate)],
 ):
@@ -28,7 +28,7 @@ async def read_users_me(
     )
 
 
-@router.post("/set-password")
+@router.post("/set-password/")
 async def get_me(data: SetPasswordRequest, user: Annotated[User, Depends(authenticate)]) -> MessageSchema:
     session = get_session()
     async with session:

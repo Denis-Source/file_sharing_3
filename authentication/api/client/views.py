@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 
-@router.post("/create")
+@router.post("/create/")
 async def register(data: RegisterClientRequest) -> RegisterClientResponse:
     session = get_session()
 

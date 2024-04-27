@@ -20,7 +20,7 @@ router = APIRouter(
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 
-@router.post("/register")
+@router.post("/register/")
 async def register(data: RegisterRequest) -> RegisterResponse:
     session = get_session()
 
@@ -41,7 +41,7 @@ async def register(data: RegisterRequest) -> RegisterResponse:
         )
 
 
-@router.post("/token")
+@router.post("/token/")
 async def login_for_access_token(
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
