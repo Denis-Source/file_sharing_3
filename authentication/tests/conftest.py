@@ -72,6 +72,20 @@ async def mock_user(test_session: AsyncSession) -> User:
     await service.delete(user_id)
 
 
+async def mock_user_with_password(test_session: AsyncSession) -> tuple[User, str]:
+    service = UserService(test_session)
+    plain_password = generate_mock_plain_password()
+    user = await service.create(
+        username=f"user_{generate_mock_name()}",
+        plain_password=plain_password
+    )
+
+    user_id = user.id
+    yield user, plain_password
+
+    await service.delete(user_id)
+
+
 @pytest.fixture
 async def mock_client(test_session: AsyncSession, mock_user: User) -> Client:
     service = ClientService(test_session)

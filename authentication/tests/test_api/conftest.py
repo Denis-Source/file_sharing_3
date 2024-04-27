@@ -1,9 +1,10 @@
 import pytest
-from fastapi.testclient import TestClient
+from httpx import AsyncClient
 
 from app import app
 
 
 @pytest.fixture
-def mock_http_client():
-    return TestClient(app)
+async def mock_http_client(event_loop):
+    async with AsyncClient(app=app, base_url="https://testserver") as client:
+        yield client

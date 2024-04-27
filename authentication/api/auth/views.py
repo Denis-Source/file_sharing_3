@@ -11,16 +11,22 @@ from services.authentication_serivce import AuthenticationService, Authenticatio
 from services.base import UniquenessError
 from services.user_service import UserService
 
+# TODO exception schema
+
+AUTH_URL_NAME = "auth"
+AUTH_URL_REGISTER = "/register/"
+AUTH_URL_TOKEN = "/token/"
+
 router = APIRouter(
-    prefix="/auth",
-    tags=["auth"],
+    prefix=f"/{AUTH_URL_NAME}",
+    tags=[AUTH_URL_NAME],
     responses={400: {"model": HTTPExceptionSchema}},
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=AUTH_URL_NAME + AUTH_URL_TOKEN)
 
 
-@router.post("/register/")
+@router.post(AUTH_URL_REGISTER)
 async def register(data: RegisterRequest) -> RegisterResponse:
     session = get_session()
 
@@ -41,7 +47,7 @@ async def register(data: RegisterRequest) -> RegisterResponse:
         )
 
 
-@router.post("/token/")
+@router.post(AUTH_URL_TOKEN)
 async def login_for_access_token(
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
