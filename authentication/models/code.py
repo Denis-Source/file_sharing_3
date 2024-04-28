@@ -17,7 +17,7 @@ class Code(Base):
     client_id: Mapped[int] = mapped_column(
         ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
     redirect_uri: Mapped[str] = mapped_column(
-        nullable=True)
+        nullable=False)
     valid_until: Mapped[datetime] = mapped_column(
         nullable=False)
     created_at: Mapped[datetime] = mapped_column(
