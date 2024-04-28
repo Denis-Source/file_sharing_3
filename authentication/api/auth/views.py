@@ -86,6 +86,7 @@ async def token_code(data: CodeTokenRequest) -> TokenResponse:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
+# TODO Only allow in a develop mode
 @router.post(AUTH_URL_TOKEN_PASSWORD)
 async def token_password(
         data: Annotated[PasswordTokenRequestForm, Depends()],
