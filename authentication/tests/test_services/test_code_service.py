@@ -24,7 +24,7 @@ async def test_create(test_session: AsyncSession, mock_client: Client):
         select(func.count())
         .where(Code.id == code.id)) == 1
 
-    await test_session.execute(delete(Client).where(Code.id == code.id))
+    await test_session.execute(delete(Code).where(Code.id == code.id))
     await test_session.commit()
 
 

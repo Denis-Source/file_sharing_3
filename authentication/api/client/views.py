@@ -10,14 +10,17 @@ from services.base import UniquenessError
 from services.client_service import ClientService
 from services.user_service import UserService
 
+CLIENT_URL_NAME = "client"
+CLIENT_URL_CREATE = "/create/"
+
 router = APIRouter(
-    prefix="/client",
-    tags=["client"],
+    prefix=f"/{CLIENT_URL_NAME}",
+    tags=[CLIENT_URL_NAME],
     responses={400: {"model": ErrorSchema}},
 )
 
 
-@router.post("/create/")
+@router.post(CLIENT_URL_CREATE)
 async def register(data: RegisterClientRequest) -> RegisterClientResponse:
     session = get_session()
 

@@ -156,3 +156,9 @@ async def mock_token_pair(test_session: AsyncSession, mock_user_with_password: U
         client_id=mock_client.id,
         client_secret=mock_client.secret
     )
+
+
+@pytest.fixture
+async def mock_auth_header(mock_token_pair: tuple[str, str]):
+    access_token, _ = mock_token_pair
+    return {"Authorization": f"Bearer {access_token}"}
