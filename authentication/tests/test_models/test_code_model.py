@@ -7,18 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.client import Client
 from models.code import Code
+from tests.conftest import get_mock_callback_uri
 
 
 async def test_create(test_session: AsyncSession, mock_client: Client):
-    redirect_uri = "https://example.com/callback"
-    valid_until = datetime.now() + timedelta(minutes=10)
-    value = "test_value"
-
     code = Code(
-        value=value,
+        value="test_value",
         client_id=mock_client.id,
-        redirect_uri=redirect_uri,
-        valid_until=valid_until
+        redirect_uri=get_mock_callback_uri(),
+        valid_until=datetime.now() + timedelta(minutes=10)
     )
     test_session.add(code)
     await test_session.commit()
@@ -30,14 +27,10 @@ async def test_create(test_session: AsyncSession, mock_client: Client):
 
 
 async def test_client_id_constraint(test_session: AsyncSession):
-    redirect_uri = "https://example.com/callback"
-    valid_until = datetime.now() + timedelta(minutes=10)
-    value = "test_value"
-
     code = Code(
-        value=value,
-        redirect_uri=redirect_uri,
-        valid_until=valid_until
+        value="test_value",
+        redirect_uri=get_mock_callback_uri(),
+        valid_until=datetime.now() + timedelta(minutes=10)
     )
     test_session.add(code)
 
@@ -47,13 +40,10 @@ async def test_client_id_constraint(test_session: AsyncSession):
 
 
 async def test_value_constraint(test_session: AsyncSession, mock_client: Client):
-    redirect_uri = "https://example.com/callback"
-    valid_until = datetime.now() + timedelta(minutes=10)
-
     code = Code(
         client_id=mock_client.id,
-        redirect_uri=redirect_uri,
-        valid_until=valid_until
+        redirect_uri=get_mock_callback_uri(),
+        valid_until=datetime.now() + timedelta(minutes=10)
     )
     test_session.add(code)
 
@@ -63,12 +53,10 @@ async def test_value_constraint(test_session: AsyncSession, mock_client: Client)
 
 
 async def test_redirect_uri_constraint(test_session: AsyncSession, mock_client: Client):
-    valid_until = datetime.now() + timedelta(minutes=10)
-    value = "test_value"
     code = Code(
         client_id=mock_client.id,
-        value=value,
-        valid_until=valid_until
+        value="test_value",
+        valid_until=datetime.now() + timedelta(minutes=10)
     )
     test_session.add(code)
 
@@ -78,13 +66,10 @@ async def test_redirect_uri_constraint(test_session: AsyncSession, mock_client: 
 
 
 async def test_valid_until_constraint(test_session: AsyncSession, mock_client: Client):
-    redirect_uri = "https://example.com/callback"
-    value = "test_value"
-
     code = Code(
-        value=value,
+        value="test_value",
         client_id=mock_client.id,
-        redirect_uri=redirect_uri,
+        redirect_uri=get_mock_callback_uri(),
     )
     test_session.add(code)
 

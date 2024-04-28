@@ -12,7 +12,7 @@ from models.code import Code
 from models.user import User
 from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, TokenError, AuthenticationError
 from services.user_service import UserService
-from tests.conftest import generate_mock_password
+from tests.conftest import generate_mock_password, get_mock_callback_uri
 
 
 def test_encode(mock_user: User):
@@ -312,7 +312,7 @@ async def test_authenticate_user_wrong_password(test_session: AsyncSession, mock
 
 
 async def test_get_auth_uri_success(mock_client: Client):
-    redirect_uri = "https://example.com/callback/"
+    redirect_uri = get_mock_callback_uri()
     assert AuthenticationService.get_auth_uri(
         client_id=mock_client.id,
         redirect_uri=redirect_uri
@@ -330,11 +330,10 @@ async def test_get_callback_uri_success(mock_code: Code):
 
 async def test_generate_code_success(test_session: AsyncSession, mock_client: Client):
     auth_service = AuthenticationService(test_session)
-    redirect_uri = "https://example.com/callback/"
 
     code = await auth_service.generate_code(
         client_id=mock_client.id,
-        redirect_uri=redirect_uri
+        redirect_uri=get_mock_callback_uri()
     )
 
     assert await test_session.scalar(
@@ -349,7 +348,7 @@ async def test_generate_code_success(test_session: AsyncSession, mock_client: Cl
 
 async def test_generate_code_non_existent_client(test_session: AsyncSession):
     auth_service = AuthenticationService(test_session)
-    redirect_uri = "https://example.com/callback/"
+    redirect_uri = get_mock_callback_uri()
     non_existent_client_id = int(1e9 + 42)
 
     with pytest.raises(AuthenticationError):
