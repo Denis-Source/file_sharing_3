@@ -7,14 +7,14 @@ from sqlalchemy import func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import APP_NAME
-from env import get_front_end_url, get_access_token_valid, get_refresh_token_valid, get_app_secret
+from env import get_frontend_url, get_access_token_valid, get_refresh_token_valid, get_app_secret
 from models.client import Client
 from models.code import Code
 from models.user import User
 from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, TokenError, AuthenticationError, \
     TokenTypes
 from services.user_service import UserService
-from tests.conftest import generate_mock_password, get_mock_callback_uri
+from tests.conftest import generate_mock_password, get_mock_uri
 
 
 def test_get_expiration_date_access():
@@ -356,11 +356,11 @@ async def test_authenticate_user_wrong_password(test_session: AsyncSession, mock
 
 
 async def test_get_auth_uri_success(mock_client: Client):
-    redirect_uri = get_mock_callback_uri()
+    redirect_uri = get_mock_uri()
     assert AuthenticationService.get_auth_uri(
         client_id=mock_client.id,
         redirect_uri=redirect_uri
-    ) == f"{get_front_end_url()}" \
+    ) == f"{get_frontend_url()}" \
          f"/login/" \
          f"?{urlencode({'client_id': mock_client.id, 'redirect_uri': redirect_uri})}"
 
@@ -377,7 +377,7 @@ async def test_generate_code_success(test_session: AsyncSession, mock_client: Cl
 
     code = await auth_service.generate_code(
         client_id=mock_client.id,
-        redirect_uri=get_mock_callback_uri()
+        redirect_uri=get_mock_uri()
     )
 
     assert await test_session.scalar(
@@ -392,7 +392,7 @@ async def test_generate_code_success(test_session: AsyncSession, mock_client: Cl
 
 async def test_generate_code_non_existent_client(test_session: AsyncSession):
     auth_service = AuthenticationService(test_session)
-    redirect_uri = get_mock_callback_uri()
+    redirect_uri = get_mock_uri()
     non_existent_client_id = int(1e9 + 42)
 
     with pytest.raises(AuthenticationError):

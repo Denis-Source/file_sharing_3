@@ -34,6 +34,12 @@ class CodeTokenRequest(BaseSchema):
     redirect_uri: str
 
 
+class RefreshRequest(BaseSchema):
+    refresh_token: str
+    client_id: int
+    client_secret: str
+
+
 class TokenResponse(BaseSchema):
     access_token: str
     refresh_token: Optional[str]

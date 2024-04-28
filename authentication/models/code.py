@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
 
 
-# TODO tests
 class Code(Base):
     __tablename__ = "codes"
 

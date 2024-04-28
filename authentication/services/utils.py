@@ -3,6 +3,7 @@ import secrets
 from urllib.parse import urlencode
 
 
+# TODO add tests
 def encode64(input_bytes: bytes) -> str:
     return base64.b64encode(input_bytes).decode()
 

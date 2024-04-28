@@ -27,10 +27,6 @@ async def test_register_success(mock_http_client: AsyncClient, test_session: Asy
         select(func.count())
         .where(User.id == json_response.get("id"))) == 1
 
-    await test_session.execute(
-        delete(User).where(User.id == json_response.get("id"))
-    )
-    await test_session.commit()
 
 
 async def test_register_no_username(mock_http_client: AsyncClient, test_session: AsyncSession):

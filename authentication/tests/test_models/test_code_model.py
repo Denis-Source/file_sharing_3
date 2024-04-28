@@ -7,14 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.client import Client
 from models.code import Code
-from tests.conftest import get_mock_callback_uri
+from tests.conftest import get_mock_uri
 
 
 async def test_create(test_session: AsyncSession, mock_client: Client):
     code = Code(
         value="test_value",
         client_id=mock_client.id,
-        redirect_uri=get_mock_callback_uri(),
+        redirect_uri=get_mock_uri(),
         valid_until=datetime.now() + timedelta(minutes=10)
     )
     test_session.add(code)
@@ -29,7 +29,7 @@ async def test_create(test_session: AsyncSession, mock_client: Client):
 async def test_client_id_constraint(test_session: AsyncSession):
     code = Code(
         value="test_value",
-        redirect_uri=get_mock_callback_uri(),
+        redirect_uri=get_mock_uri(),
         valid_until=datetime.now() + timedelta(minutes=10)
     )
     test_session.add(code)
@@ -42,7 +42,7 @@ async def test_client_id_constraint(test_session: AsyncSession):
 async def test_value_constraint(test_session: AsyncSession, mock_client: Client):
     code = Code(
         client_id=mock_client.id,
-        redirect_uri=get_mock_callback_uri(),
+        redirect_uri=get_mock_uri(),
         valid_until=datetime.now() + timedelta(minutes=10)
     )
     test_session.add(code)
@@ -69,7 +69,7 @@ async def test_valid_until_constraint(test_session: AsyncSession, mock_client: C
     code = Code(
         value="test_value",
         client_id=mock_client.id,
-        redirect_uri=get_mock_callback_uri(),
+        redirect_uri=get_mock_uri(),
     )
     test_session.add(code)
 

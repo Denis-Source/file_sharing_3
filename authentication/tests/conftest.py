@@ -127,7 +127,7 @@ async def mock_client(test_session: AsyncSession, mock_user: User) -> Client:
     await service.delete(client_id)
 
 
-def get_mock_callback_uri():
+def get_mock_uri():
     return "https://example.com/callback/"
 
 
@@ -136,7 +136,7 @@ async def mock_code(test_session: AsyncSession, mock_client: Client) -> Code:
     service = CodeService(test_session)
     code = await service.create(
         client=mock_client,
-        redirect_uri=get_mock_callback_uri(),
+        redirect_uri=get_mock_uri(),
         valid_until=datetime.now() + timedelta(get_authentication_code_valid_minutes())
     )
 

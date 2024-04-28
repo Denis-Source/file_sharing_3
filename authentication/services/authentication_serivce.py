@@ -7,7 +7,7 @@ from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import APP_NAME
-from env import get_app_secret, get_front_end_url, get_authentication_code_valid_minutes, get_access_token_valid, \
+from env import get_app_secret, get_frontend_url, get_authentication_code_valid_minutes, get_access_token_valid, \
     get_refresh_token_valid
 from models.code import Code
 from models.user import User
@@ -178,7 +178,7 @@ class AuthenticationService(BaseService):
     @staticmethod
     def get_auth_uri(client_id: int, redirect_uri: str) -> str:
         return querify_url(
-            url=urljoin(get_front_end_url(), "login/"),
+            url=urljoin(get_frontend_url(), "login/"),
             client_id=client_id,
             redirect_uri=redirect_uri
         )

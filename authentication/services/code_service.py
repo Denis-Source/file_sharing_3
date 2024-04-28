@@ -6,14 +6,12 @@ from sqlalchemy.orm import subqueryload
 from models.client import Client
 from models.code import Code
 from services.base import ModelService
-# TODO test
 from services.utils import generate_authorization_code
 
 
 class CodeService(ModelService):
     model_cls = Code
 
-    # TODO make it automatically for all model selects
     async def _preload_relationships(self, instance: Code):
         return await self.session.scalar(
             select(Code)

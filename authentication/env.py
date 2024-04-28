@@ -117,7 +117,7 @@ def get_postgres_password() -> str:
     return value
 
 
-def get_front_end_url() -> str:
+def get_frontend_url() -> str:
     key = "FRONTEND_URL"
     value = os.getenv(key)
 
