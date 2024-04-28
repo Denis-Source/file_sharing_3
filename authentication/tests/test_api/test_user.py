@@ -3,7 +3,7 @@ from httpx import AsyncClient
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api.auth.views import AUTH_URL_NAME, AUTH_URL_REGISTER
+from api.user.views import USER_URL_NAME, USER_URL_REGISTER
 from models.client import Client
 from models.user import User
 from tests.conftest import generate_mock_name, generate_mock_plain_password
@@ -14,7 +14,7 @@ async def test_register_success(mock_http_client: AsyncClient, test_session: Asy
     password = generate_mock_plain_password()
 
     response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AUTH_URL_REGISTER,
+        url=USER_URL_NAME + USER_URL_REGISTER,
         json={
             "username": username,
             "password": password
@@ -33,7 +33,7 @@ async def test_register_no_username(mock_http_client: AsyncClient, test_session:
     password = generate_mock_plain_password()
 
     response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AUTH_URL_REGISTER,
+        url=USER_URL_NAME + USER_URL_REGISTER,
         json={
             "password": password
         }
@@ -50,7 +50,7 @@ async def test_register_no_password(mock_http_client: AsyncClient, test_session:
     username = generate_mock_name()
 
     response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AUTH_URL_REGISTER,
+        url=USER_URL_NAME + USER_URL_REGISTER,
         json={
             "username": username
         }
@@ -67,7 +67,7 @@ async def test_register_already_exists(mock_http_client, test_session: AsyncSess
     password = generate_mock_plain_password()
 
     response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AUTH_URL_REGISTER,
+        url=USER_URL_NAME + USER_URL_REGISTER,
         json={
             "username": mock_user.username,
             "password": password
@@ -79,7 +79,3 @@ async def test_register_already_exists(mock_http_client, test_session: AsyncSess
     assert await test_session.scalar(
         select(func.count())
         .where(User.id == json_response.get("id"))) == 0
-
-
-async def test_token_success(mock_http_client: AsyncClient, mock_user: User, mock_client: Client):
-    pass

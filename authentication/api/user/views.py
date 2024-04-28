@@ -12,14 +12,14 @@ from services.base import UniquenessError
 from services.password_service.validators import PasswordValidationError
 from services.user_service import UserService
 
-AUTH_URL_NAME = "users"
+USER_URL_NAME = "users"
 USER_URL_REGISTER = "/register/"
 USER_URL_PROFILE = "/profile/"
 USER_URL_SET_PASSWORD = "/set-password/"
 
 router = APIRouter(
-    prefix=f"/{AUTH_URL_NAME}",
-    tags=[AUTH_URL_NAME],
+    prefix=f"/{USER_URL_NAME}",
+    tags=[USER_URL_NAME],
     responses={400: {"model": ErrorSchema}},
 )
 
