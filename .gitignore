@@ -3,11 +3,6 @@ env
 venv
 node_modules
 
-# Media/Static
-media
-static
-static_root
-
 # Local databases
 *.sqlite3
 *.db
