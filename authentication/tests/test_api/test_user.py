@@ -1,10 +1,9 @@
 from fastapi import status
 from httpx import AsyncClient
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.user.views import USER_URL_NAME, USER_URL_REGISTER
-from models.client import Client
 from models.user import User
 from tests.conftest import generate_mock_name, generate_mock_plain_password
 
@@ -27,6 +26,11 @@ async def test_register_success(mock_http_client: AsyncClient, test_session: Asy
     assert await test_session.scalar(
         select(func.count())
         .where(User.id == json_response.get("id"))) == 1
+
+    await test_session.execute(
+        delete(User).where(User.id == json_response.get("id"))
+    )
+    await test_session.commit()
 
 
 async def test_register_no_username(mock_http_client: AsyncClient, test_session: AsyncSession):
