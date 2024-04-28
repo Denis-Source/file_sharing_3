@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
 
 
+# TODO Make used field so that the code expires after being used
 class Code(Base):
     __tablename__ = "codes"
 
