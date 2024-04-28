@@ -1,9 +1,14 @@
+from urllib.parse import urlencode
+
 import jwt
 import pytest
+from sqlalchemy import func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import APP_NAME
+from env import get_front_end_url
 from models.client import Client
+from models.code import Code
 from models.user import User
 from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, TokenError, AuthenticationError
 from services.user_service import UserService
@@ -267,3 +272,145 @@ async def test_get_user_by_token_user_not_exist(test_session: AsyncSession, mock
             token=token,
             secret=secret
         )
+
+
+async def test_authenticate_user_success(test_session: AsyncSession, mock_user_with_password: tuple[User, str]):
+    mock_user, password = mock_user_with_password
+    auth_service = AuthenticationService(test_session)
+    assert mock_user == await auth_service.authenticate_user(
+        username=mock_user.username,
+        password=password
+    )
+
+
+async def test_authenticate_user_not_exist(test_session: AsyncSession):
+    auth_service = AuthenticationService(test_session)
+    non_existent_username = "not_existent_username"
+    password = generate_mock_password()
+
+    with pytest.raises(AuthenticationError):
+        await auth_service.authenticate_user(
+            username=non_existent_username,
+            password=password
+        )
+
+
+async def test_authenticate_user_wrong_password(test_session: AsyncSession, mock_user: User):
+    auth_service = AuthenticationService(test_session)
+    user_service = UserService(test_session)
+    password = generate_mock_password()
+
+    assert not await user_service.check_password(
+        instance=mock_user,
+        plain_password=password
+    )
+    with pytest.raises(AuthenticationError):
+        await auth_service.authenticate_user(
+            username=mock_user.username,
+            password=password
+        )
+
+
+async def test_get_auth_uri_success(mock_client: Client):
+    redirect_uri = "https://example.com/callback/"
+    assert AuthenticationService.get_auth_uri(
+        client_id=mock_client.id,
+        redirect_uri=redirect_uri
+    ) == f"{get_front_end_url()}" \
+         f"/login/" \
+         f"?{urlencode({'client_id': mock_client.id, 'redirect_uri': redirect_uri})}"
+
+
+async def test_get_callback_uri_success(mock_code: Code):
+    assert AuthenticationService.get_callback_uri(
+        code=mock_code
+    ) == f"{mock_code.redirect_uri}" \
+         f"?{urlencode({'code': mock_code.value})}"
+
+
+async def test_generate_code_success(test_session: AsyncSession, mock_client: Client):
+    auth_service = AuthenticationService(test_session)
+    redirect_uri = "https://example.com/callback/"
+
+    code = await auth_service.generate_code(
+        client_id=mock_client.id,
+        redirect_uri=redirect_uri
+    )
+
+    assert await test_session.scalar(
+        select(func.count()).where(
+            Code.id == code.id)) == 1
+    assert code.value
+
+    await test_session.execute(
+        delete(Code).where(Code.id == code.id)
+    )
+
+
+async def test_generate_code_non_existent_client(test_session: AsyncSession):
+    auth_service = AuthenticationService(test_session)
+    redirect_uri = "https://example.com/callback/"
+    non_existent_client_id = int(1e9 + 42)
+
+    with pytest.raises(AuthenticationError):
+        await auth_service.generate_code(
+            client_id=non_existent_client_id,
+            redirect_uri=redirect_uri
+        )
+
+
+async def test_check_code_success(test_session: AsyncSession, mock_client: Client, mock_code: Code):
+    auth_service = AuthenticationService(test_session)
+    code = await auth_service.check_code(
+        client_id=mock_client.id,
+        client_secret=mock_client.secret,
+        redirect_uri=mock_code.redirect_uri,
+        value=mock_code.value
+    )
+
+    assert code == mock_code
+
+
+async def test_check_code_wrong_client_secret(test_session: AsyncSession, mock_client: Client, mock_code: Code):
+    auth_service = AuthenticationService(test_session)
+    wrong_secret = "wrong_secret"
+    with pytest.raises(AuthenticationError):
+        await auth_service.check_code(
+            client_id=mock_client.id,
+            client_secret=wrong_secret,
+            redirect_uri=mock_code.redirect_uri,
+            value=mock_code.value
+        )
+
+
+async def test_check_code_wrong_client_id(test_session: AsyncSession, mock_client: Client, mock_code: Code):
+    auth_service = AuthenticationService(test_session)
+    non_existent_client_id = int(1e9 + 42)
+    with pytest.raises(AuthenticationError):
+        await auth_service.check_code(
+            client_id=non_existent_client_id,
+            client_secret=mock_client.secret,
+            redirect_uri=mock_code.redirect_uri,
+            value=mock_code.value
+        )
+
+
+async def test_create_code_token_success(test_session: AsyncSession, mock_client: Client, mock_code: Code):
+    auth_service = AuthenticationService(test_session)
+    secret = "test_secret"
+
+    token = await auth_service.create_code_token(
+        client_id=mock_client.id,
+        client_secret=mock_client.secret,
+        redirect_uri=mock_code.redirect_uri,
+        value=mock_code.value,
+        secret=secret
+    )
+
+    decoded_token = jwt.decode(
+        token,
+        secret,
+        JWT_ALGORITHM
+    )
+
+    assert decoded_token.get("sub") == mock_client.user.username

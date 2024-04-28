@@ -136,24 +136,21 @@ class AuthenticationService(BaseService):
 
         return user
 
-    # TODO tests??
     @staticmethod
     def get_auth_uri(client_id: int, redirect_uri: str) -> str:
         return querify_url(
-            url=urljoin(get_front_end_url(), "login"),
+            url=urljoin(get_front_end_url(), "login/"),
             client_id=client_id,
             redirect_uri=redirect_uri
         )
 
-    # TODO tests???
     @staticmethod
     def get_callback_uri(code: Code) -> str:
         return querify_url(
-            code.redirect_uri,
+            url=code.redirect_uri,
             code=code.value
         )
 
-    # TODO tests
     async def generate_code(self, client_id: int, redirect_uri: str) -> Code:
         code_service = CodeService(self.session)
         client_service = ClientService(self.session)
@@ -167,7 +164,6 @@ class AuthenticationService(BaseService):
             valid_until=datetime.now() + timedelta(minutes=get_authentication_code_valid_minutes())
         )
 
-    # TODO tests
     async def check_code(
             self,
             client_id: int,
@@ -179,9 +175,9 @@ class AuthenticationService(BaseService):
         client = await client_service.get_client_by_secret(client_secret)
 
         if not client:
-            raise AuthenticationError("Wrong client secret")
+            raise AuthenticationError("Invalid client secret")
         if client.id != client_id:
-            raise AuthenticationError("Wrong client id")
+            raise AuthenticationError("Invalid client id")
 
         code_service = CodeService(self.session)
         code = await code_service.get_valid_code(value, client.id, redirect_uri)
@@ -190,7 +186,6 @@ class AuthenticationService(BaseService):
 
         return code
 
-    # TODO test
     async def create_code_token(
             self,
             client_id: int,
