@@ -1,7 +1,7 @@
 from datetime import datetime
 
-from sqlalchemy import select, delete
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select
+from sqlalchemy.orm import subqueryload
 
 from models.client import Client
 from models.user import User
@@ -9,12 +9,13 @@ from services.base import ModelService, UniquenessError
 
 
 class ClientService(ModelService):
+    model_cls = Client
+
     async def _preload_relationships(self, instance: Client):
         return await self.session.scalar(
             select(Client)
             .where(Client.id == instance.id)
-            .options(selectinload(Client.user))
-            .options(selectinload(Client.codes))
+            .options(subqueryload(self.model_cls.user))
         )
 
     async def create(self, name: str, user: User, commit: bool = True, **kwargs) -> Client:
@@ -47,17 +48,3 @@ class ClientService(ModelService):
             await self.session.commit()
 
         return instance
-
-    async def delete(self, instance_id: int, commit: bool = True):
-        qs = delete(Client).where(Client.id == instance_id)
-
-        await self.session.execute(qs)
-        if commit:
-            await self.session.commit()
-
-    # TODO tests
-    # TODO create by_id and delete methods in the base class
-    async def get_by_id(self, id_: int) -> Client:
-        return await self.session.scalar(
-            select(Client).where(Client.id == id_)
-        )

@@ -28,6 +28,17 @@ async def test_create(test_session: AsyncSession, mock_user: User):
     await test_session.commit()
 
 
+async def test_get_by_id(test_session: AsyncSession, mock_client: Client):
+    service = ClientService(test_session)
+    assert mock_client == await service.get_by_id(id_=mock_client.id)
+
+
+async def test_get_by_id_not_exist(test_session: AsyncSession):
+    non_existent_id = int(1e9 + 42)
+    service = ClientService(test_session)
+    assert not await service.get_by_id(id_=non_existent_id)
+
+
 async def test_name_uniqueness(test_session: AsyncSession, mock_user: User, mock_client: Client):
     service = ClientService(test_session)
 

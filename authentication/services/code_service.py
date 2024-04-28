@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import select, delete
+from sqlalchemy import select
 from sqlalchemy.orm import subqueryload
 
 from models.client import Client
@@ -11,6 +11,8 @@ from services.utils import generate_authorization_code
 
 
 class CodeService(ModelService):
+    model_cls = Code
+
     # TODO make it automatically for all model selects
     async def _preload_relationships(self, instance: Code):
         return await self.session.scalar(
@@ -39,13 +41,6 @@ class CodeService(ModelService):
             instance = await self._preload_relationships(instance)
         return instance
 
-    async def delete(self, instance_id: int, commit: bool = True):
-        qs = delete(Code).where(Code.id == instance_id)
-
-        await self.session.execute(qs)
-        if commit:
-            await self.session.commit()
-
     async def get_valid_code(self, value: str, client_id: int, redirect_uri: str) -> Code:
         code = await self.session.scalar(
             select(Code).where(
@@ -55,7 +50,6 @@ class CodeService(ModelService):
                 Code.valid_until > datetime.now()
             )
         )
-        # TODO fix that
         if code:
             code = await self._preload_relationships(code)
         return code

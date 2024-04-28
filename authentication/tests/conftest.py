@@ -1,16 +1,20 @@
 import asyncio
 import random
+from datetime import datetime, timedelta
 from string import ascii_lowercase, digits
 
 import pytest
 from sqlalchemy import AsyncAdaptedQueuePool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 
+import env
 from config import get_test_database_url, ADAPTERS
 from migrations.operations import migrate_head
 from models.client import Client
+from models.code import Code
 from models.user import User
 from services.client_service import ClientService
+from services.code_service import CodeService
 from services.user_service import UserService
 
 
@@ -98,3 +102,18 @@ async def mock_client(test_session: AsyncSession, mock_user: User) -> Client:
     yield client
 
     await service.delete(client_id)
+
+
+@pytest.fixture
+async def mock_code(test_session: AsyncSession, mock_client: Client) -> Code:
+    service = CodeService(test_session)
+    code = await service.create(
+        client=mock_client,
+        redirect_uri="mock_redirect",
+        valid_until=datetime.now() + timedelta(env.get_authentication_code_valid_minutes())
+    )
+
+    code_id = code.id
+    yield code
+
+    await service.delete(code_id)

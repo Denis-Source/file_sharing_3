@@ -24,6 +24,17 @@ async def test_create(test_session: AsyncSession):
     await test_session.commit()
 
 
+async def test_get_by_id(test_session: AsyncSession, mock_user: User):
+    service = UserService(test_session)
+    assert mock_user == await service.get_by_id(id_=mock_user.id)
+
+
+async def test_get_by_id_not_exist(test_session: AsyncSession):
+    non_existent_id = int(1e9 + 42)
+    service = UserService(test_session)
+    assert not await service.get_by_id(id_=non_existent_id)
+
+
 async def test_create_username_uniqueness(test_session: AsyncSession, mock_user: User):
     service = UserService(test_session)
     with pytest.raises(UniquenessError):
