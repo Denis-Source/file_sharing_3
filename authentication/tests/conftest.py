@@ -13,6 +13,7 @@ from migrations.operations import migrate_head
 from models.client import Client
 from models.code import Code
 from models.user import User
+from services.authentication_serivce import AuthenticationService
 from services.client_service import ClientService
 from services.code_service import CodeService
 from services.user_service import UserService
@@ -77,18 +78,39 @@ async def mock_user(test_session: AsyncSession) -> User:
 
 
 @pytest.fixture
-async def mock_user_with_password(test_session: AsyncSession) -> tuple[User, str]:
+async def another_mock_user(test_session: AsyncSession) -> User:
     service = UserService(test_session)
-    plain_password = generate_mock_plain_password()
     user = await service.create(
         username=f"user_{generate_mock_name()}",
-        plain_password=plain_password
+        plain_password=generate_mock_plain_password()
     )
 
     user_id = user.id
-    yield user, plain_password
+    yield user
 
     await service.delete(user_id)
+
+
+@pytest.fixture
+async def mock_user_with_password(test_session: AsyncSession, mock_user: User) -> tuple[User, str]:
+    service = UserService(test_session)
+    plain_password = generate_mock_plain_password()
+    await service.set_password(
+        instance=mock_user,
+        plain_password=plain_password
+    )
+    return mock_user, plain_password
+
+
+@pytest.fixture
+async def another_mock_user_with_password(test_session: AsyncSession, another_mock_user: User) -> tuple[User, str]:
+    service = UserService(test_session)
+    plain_password = generate_mock_plain_password()
+    await service.set_password(
+        instance=another_mock_user,
+        plain_password=plain_password
+    )
+    return another_mock_user, plain_password
 
 
 @pytest.fixture
@@ -122,3 +144,15 @@ async def mock_code(test_session: AsyncSession, mock_client: Client) -> Code:
     yield code
 
     await service.delete(code_id)
+
+
+@pytest.fixture
+async def mock_token_pair(test_session: AsyncSession, mock_user_with_password: User, mock_client: Client):
+    auth_service = AuthenticationService(test_session)
+    mock_user, password = mock_user_with_password
+    return await auth_service.create_password_pair(
+        username=mock_user.username,
+        password=password,
+        client_id=mock_client.id,
+        client_secret=mock_client.secret
+    )

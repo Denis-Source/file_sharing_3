@@ -120,7 +120,7 @@ class AuthenticationService(BaseService):
         user_service = UserService(self.session)
         user = await user_service.get_user_by_username(username)
         if not user:
-            raise AuthenticationError("Incorrect username")
+            raise AuthenticationError("User not found")
         if not await user_service.check_password(user, password):
             raise AuthenticationError("Incorrect password")
 
@@ -130,6 +130,8 @@ class AuthenticationService(BaseService):
             raise AuthenticationError("Incorrect secret")
         if client.id != client_id:
             raise AuthenticationError("Incorrect client id")
+        if client.user.id != user.id:
+            raise AuthenticationError("Wrong user")
 
         access_token = self.generate_token(
             sub=user.username,
@@ -144,11 +146,19 @@ class AuthenticationService(BaseService):
 
         return access_token, refresh
 
-    async def get_user_by_token(self, token: str, secret: str = None) -> User:
+    async def get_user_by_token(
+            self,
+            token: str,
+            required_token_type=TokenTypes.ACCESS,
+            secret: str = None) -> User:
         user_service = UserService(self.session)
         decoded_token = self.decode_token(token, secret)
 
         username = decoded_token.get("sub")
+        token_type = decoded_token.get("type")
+        if token_type != required_token_type:
+            raise AuthenticationError("Token should be of access type")
+
         user = await user_service.get_user_by_username(username=username)
         if not user:
             raise AuthenticationError("User not found")
@@ -243,4 +253,40 @@ class AuthenticationService(BaseService):
             secret=secret
         )
 
+        return access_token, refresh
+
+    async def refresh_pair(
+            self,
+            refresh_token: str,
+            client_id: int,
+            client_secret: str,
+            secret: str = None
+    ) -> tuple[str, str]:
+        if not secret:
+            secret = get_app_secret()
+
+        client_service = ClientService(self.session)
+        client = await client_service.get_client_by_secret(secret=client_secret)
+
+        if not client:
+            raise AuthenticationError("Invalid client secret")
+        if client.id != client_id:
+            raise AuthenticationError("Invalid client id")
+
+        user = await self.get_user_by_token(
+            token=refresh_token,
+            required_token_type=TokenTypes.REFRESH,
+            secret=secret
+        )
+
+        access_token = self.generate_token(
+            sub=user.username,
+            type_=TokenTypes.ACCESS,
+            secret=secret
+        )
+        refresh = self.generate_token(
+            sub=user.username,
+            type_=TokenTypes.REFRESH,
+            secret=secret
+        )
         return access_token, refresh

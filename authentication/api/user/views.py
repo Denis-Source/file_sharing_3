@@ -2,7 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from api.auth.views import authenticate
+from api.auth.utils import authenticate
 from api.schemas import ErrorSchema, MessageSchema
 from api.user.schemas import UserResponse, SetPasswordRequest, RegisterRequest, RegisterResponse
 from config import get_session
