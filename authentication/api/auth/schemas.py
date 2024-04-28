@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi.params import Form
 from pydantic import BaseModel as BaseSchema
@@ -17,22 +17,10 @@ class PasswordTokenRequestForm:
     def __init__(
             self,
             *,
-            username: Annotated[
-                str,
-                Form()
-            ],
-            password: Annotated[
-                str,
-                Form()
-            ],
-            client_id: Annotated[
-                int,
-                Form()
-            ],
-            client_secret: Annotated[
-                str,
-                Form()
-            ]):
+            username: Annotated[str, Form()],
+            password: Annotated[str, Form()],
+            client_id: Annotated[int, Form()],
+            client_secret: Annotated[str, Form()]):
         self.username = username
         self.password = password
         self.client_id = client_id
@@ -48,4 +36,5 @@ class CodeTokenRequest(BaseSchema):
 
 class TokenResponse(BaseSchema):
     access_token: str
+    refresh_token: Optional[str]
     token_type: str

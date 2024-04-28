@@ -72,14 +72,15 @@ async def token_code(data: CodeTokenRequest) -> TokenResponse:
     async with session:
         auth_service = AuthenticationService(session)
         try:
-            token = await auth_service.create_code_token(
+            access_token, refresh_token = await auth_service.create_code_token(
                 client_id=data.client_id,
                 client_secret=data.client_secret,
                 redirect_uri=data.redirect_uri,
                 value=data.code
             )
             return TokenResponse(
-                access_token=token,
+                access_token=access_token,
+                refresh_token=refresh_token,
                 token_type="bearer"
             )
         except AuthenticationError as e:
@@ -96,7 +97,7 @@ async def token_password(
         auth_service = AuthenticationService(session)
         # TODO what if client id cannot be cast into int
         try:
-            token = await auth_service.create_password_token(
+            access_token = await auth_service.create_password_token(
                 username=data.username,
                 password=data.password,
                 client_id=data.client_id,
@@ -104,4 +105,8 @@ async def token_password(
             )
         except AuthenticationError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    return TokenResponse(access_token=token, token_type="bearer")
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=None,
+            token_type="bearer"
+        )

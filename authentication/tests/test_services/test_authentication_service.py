@@ -1,3 +1,4 @@
+from datetime import datetime
 from urllib.parse import urlencode
 
 import jwt
@@ -6,13 +7,28 @@ from sqlalchemy import func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import APP_NAME
-from env import get_front_end_url
+from env import get_front_end_url, get_access_token_valid, get_refresh_token_valid
 from models.client import Client
 from models.code import Code
 from models.user import User
-from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, TokenError, AuthenticationError
+from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, TokenError, AuthenticationError, \
+    TokenTypes
 from services.user_service import UserService
 from tests.conftest import generate_mock_password, get_mock_callback_uri
+
+
+def test_get_expiration_date_access():
+    assert round(
+        AuthenticationService.get_expiration_date(type_=TokenTypes.ACCESS).timestamp()
+    ) == round(
+        (datetime.utcnow() + get_access_token_valid()).timestamp())
+
+
+def test_get_expiration_date_refresh():
+    assert round(
+        AuthenticationService.get_expiration_date(type_=TokenTypes.REFRESH).timestamp()
+    ) == round(
+        (datetime.utcnow() + get_refresh_token_valid()).timestamp())
 
 
 def test_encode(mock_user: User):
@@ -162,7 +178,7 @@ async def test_create_oauth_token_user_not_exist(test_session: AsyncSession, moc
 
     auth_service = AuthenticationService(test_session)
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_password_token(
+        await auth_service.create_password_token(
             username=username,
             password=password,
             client_id=mock_client.id,
@@ -181,7 +197,7 @@ async def test_create_oauth_token_wrong_password(test_session: AsyncSession, moc
 
     assert not await user_service.check_password(mock_user, wrong_password)
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_password_token(
+        await auth_service.create_password_token(
             username=mock_user.username,
             password=wrong_password,
             client_id=mock_client.id,
@@ -203,7 +219,7 @@ async def test_create_oauth_token_wrong_client_secret(test_session: AsyncSession
     assert await user_service.check_password(mock_user, password)
     assert wrong_client_secret != mock_client.secret
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_password_token(
+        await auth_service.create_password_token(
             username=mock_user.username,
             password=password,
             client_id=mock_client.id,
@@ -219,11 +235,11 @@ async def test_create_oauth_token_wrong_client_id(test_session: AsyncSession, mo
     password = generate_mock_password()
     await user_service.set_password(mock_user, password)
 
-    non_existent_id = 1e9 + 42
+    non_existent_id = int(1e9 + 42)
 
     assert await user_service.check_password(mock_user, password)
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_password_token(
+        await auth_service.create_password_token(
             username=mock_user.username,
             password=password,
             client_id=non_existent_id,
@@ -398,18 +414,18 @@ async def test_create_code_token_success(test_session: AsyncSession, mock_client
     auth_service = AuthenticationService(test_session)
     secret = "test_secret"
 
-    token = await auth_service.create_code_token(
+    access_token, refresh_token = await auth_service.create_code_token(
         client_id=mock_client.id,
         client_secret=mock_client.secret,
         redirect_uri=mock_code.redirect_uri,
         value=mock_code.value,
         secret=secret
     )
+    for token in [access_token, refresh_token]:
+        decoded_token = jwt.decode(
+            token,
+            secret,
+            JWT_ALGORITHM
+        )
 
-    decoded_token = jwt.decode(
-        token,
-        secret,
-        JWT_ALGORITHM
-    )
-
-    assert decoded_token.get("sub") == mock_client.user.username
+        assert decoded_token.get("sub") == mock_client.user.username

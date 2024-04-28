@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime
+from enum import Enum
 from urllib.parse import urljoin
 
 import jwt
@@ -6,7 +7,8 @@ from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import APP_NAME
-from env import get_app_secret, get_front_end_url, get_authentication_code_valid_minutes
+from env import get_app_secret, get_front_end_url, get_authentication_code_valid_minutes, get_access_token_valid, \
+    get_refresh_token_valid
 from models.code import Code
 from models.user import User
 from services.base import BaseService, ServiceError
@@ -31,6 +33,12 @@ TOKEN_ISS = "iss"
 TOKEN_SUB = "sub"
 TOKEN_EXP = "exp"
 TOKEN_IAT = "iat"
+TOKEN_TYPE = "type"
+
+
+class TokenTypes(str, Enum):
+    REFRESH = "refresh"
+    ACCESS = "access"
 
 
 class AuthenticationError(ServiceError):
@@ -47,7 +55,19 @@ class AuthenticationService(BaseService):
         self.session = session
 
     @staticmethod
-    def generate_token(sub: str, secret: str = None, **params) -> str:
+    def get_expiration_date(type_: TokenTypes) -> datetime:
+        match type_:
+            case TokenTypes.ACCESS:
+                return datetime.utcnow() + get_access_token_valid()
+            case TokenTypes.REFRESH:
+                return datetime.utcnow() + get_refresh_token_valid()
+
+    @staticmethod
+    def generate_token(
+            sub: str,
+            type_: TokenTypes = TokenTypes.ACCESS,
+            secret: str = None,
+            **params) -> str:
         if not secret:
             secret = get_app_secret()
 
@@ -55,8 +75,9 @@ class AuthenticationService(BaseService):
             {
                 TOKEN_SUB: sub,
                 TOKEN_ISS: APP_NAME,
-                TOKEN_IAT: datetime.utcnow(),
-                TOKEN_EXP: datetime.utcnow() + timedelta(days=60),
+                TOKEN_IAT: datetime.utcnow().timestamp(),
+                TOKEN_EXP: AuthenticationService.get_expiration_date(type_).timestamp(),
+                TOKEN_TYPE: type_,
                 **params
             },
             secret,
@@ -112,6 +133,7 @@ class AuthenticationService(BaseService):
 
         return self.generate_token(
             sub=user.username,
+            type_=TokenTypes.ACCESS,
             secret=secret
         )
 
@@ -193,7 +215,7 @@ class AuthenticationService(BaseService):
             redirect_uri: str,
             value: str,
             secret: str = None
-    ):
+    ) -> tuple[str, str]:
         code = await self.check_code(
             client_id=client_id,
             client_secret=client_secret,
@@ -202,7 +224,16 @@ class AuthenticationService(BaseService):
         )
         if not secret:
             secret = get_app_secret()
-        return self.generate_token(
+
+        access_token = self.generate_token(
             sub=code.client.user.username,
+            type_=TokenTypes.ACCESS,
             secret=secret
         )
+        refresh = self.generate_token(
+            sub=code.client.user.username,
+            type_=TokenTypes.REFRESH,
+            secret=secret
+        )
+
+        return access_token, refresh

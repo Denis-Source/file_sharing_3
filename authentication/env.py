@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import timedelta
 
 from exceptions import EnvironmentValueError
 
@@ -136,3 +137,27 @@ def get_authentication_code_valid_minutes() -> int:
         raise EnvironmentValueError(key)
 
     return value
+
+
+def get_access_token_valid() -> timedelta:
+    key = "ACCESS_TOKEN_VALID_MINUTES"
+    value = os.getenv(key, "30")
+
+    try:
+        value = int(value)
+    except ValueError:
+        raise EnvironmentValueError(key)
+
+    return timedelta(minutes=value)
+
+
+def get_refresh_token_valid() -> timedelta:
+    key = "REFRESH_TOKEN_VALID_DAYS"
+    value = os.getenv(key, "356")
+
+    try:
+        value = int(value)
+    except ValueError:
+        raise EnvironmentValueError(key)
+
+    return timedelta(days=value)
