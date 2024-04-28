@@ -20,11 +20,21 @@ services:
       - "8000:8000"
     depends_on:
       - authentication_postgres
+#      - authentication_front
     volumes:
       - ./authentication:/code
     command: bash -c "
       python migrate.py head &&
       uvicorn app:app --host 0.0.0.0 --port 8000 --reload"
+
+#  authentication_front:
+#    build:
+#      dockerfile: authentication_front/Dockerfile
+#    ports:
+#      - "3000:3000"
+#    volumes:
+#      - ./authentication_front:/code
+#      - /code/node_modules
 
 volumes:
   postgres_data: null

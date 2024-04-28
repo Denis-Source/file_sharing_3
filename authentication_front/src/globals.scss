@@ -1,0 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Slab&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
+
+$font-family-text: "Roboto Slab", serif;
+$font-family-code: "Roboto Mono", monospace;
+
+$color-card: #ffffff40;
+$color-accent: #ffffff80;
+$color-shadow: #00000060;
+$color-input-error: #ff000050;
+
+$color-primary: #000000cc;
+$color-primary-light: #00000070;
+
+$size-compact: 1400px;
+$size-limited: 1200px;
+$size-mobile: 600px;
+$size-keyboard: 600px;
+
+body {
+    font-family: $font-family-text;
+    margin: 0;
+
+    color: $color-primary;
+    min-height: 100vh;
+}
+
+a:link,
+a:visited,
+a:hover,
+a:active {
+    color: $color-primary;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+    margin: 0;
+}

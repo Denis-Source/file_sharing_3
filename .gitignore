@@ -1,6 +1,7 @@
 # Virtual envs
 env
 venv
+node_modules
 
 # Media/Static
 media

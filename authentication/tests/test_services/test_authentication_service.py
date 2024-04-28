@@ -131,7 +131,7 @@ async def test_create_oauth_token_success(test_session: AsyncSession, mock_user:
     await user_service.set_password(mock_user, password)
 
     auth_service = AuthenticationService(test_session)
-    token = await auth_service.create_oauth_token(
+    token = await auth_service.create_password_token(
         username=mock_user.username,
         password=password,
         client_id=mock_client.id,
@@ -157,7 +157,7 @@ async def test_create_oauth_token_user_not_exist(test_session: AsyncSession, moc
 
     auth_service = AuthenticationService(test_session)
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_oauth_token(
+        token = await auth_service.create_password_token(
             username=username,
             password=password,
             client_id=mock_client.id,
@@ -176,7 +176,7 @@ async def test_create_oauth_token_wrong_password(test_session: AsyncSession, moc
 
     assert not await user_service.check_password(mock_user, wrong_password)
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_oauth_token(
+        token = await auth_service.create_password_token(
             username=mock_user.username,
             password=wrong_password,
             client_id=mock_client.id,
@@ -198,7 +198,7 @@ async def test_create_oauth_token_wrong_client_secret(test_session: AsyncSession
     assert await user_service.check_password(mock_user, password)
     assert wrong_client_secret != mock_client.secret
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_oauth_token(
+        token = await auth_service.create_password_token(
             username=mock_user.username,
             password=password,
             client_id=mock_client.id,
@@ -218,7 +218,7 @@ async def test_create_oauth_token_wrong_client_id(test_session: AsyncSession, mo
 
     assert await user_service.check_password(mock_user, password)
     with pytest.raises(AuthenticationError):
-        token = await auth_service.create_oauth_token(
+        token = await auth_service.create_password_token(
             username=mock_user.username,
             password=password,
             client_id=non_existent_id,

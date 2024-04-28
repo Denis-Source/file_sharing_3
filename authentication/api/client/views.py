@@ -3,7 +3,7 @@ from fastapi import HTTPException
 from fastapi import status
 
 from api.client.schemas import RegisterClientRequest, RegisterClientResponse
-from api.schemas import HTTPExceptionSchema
+from api.schemas import ErrorSchema
 from config import get_session
 from models.base import FieldValidationError
 from services.base import UniquenessError
@@ -13,7 +13,7 @@ from services.user_service import UserService
 router = APIRouter(
     prefix="/client",
     tags=["client"],
-    responses={400: {"model": HTTPExceptionSchema}},
+    responses={400: {"model": ErrorSchema}},
 )
 
 

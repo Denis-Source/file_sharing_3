@@ -29,6 +29,8 @@ class Client(Base):
 
     user: Mapped["User"] = relationship(
         back_populates="clients")
+    codes: Mapped["Code"] = relationship(
+        back_populates="client")
 
     @validates("name")
     def validate_username(self, key, username):

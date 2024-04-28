@@ -1,0 +1,15 @@
+@import "../../Static/Styles/globals";
+
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 10px;
+
+  @media screen and (max-width: $size-compact) {
+    grid-template-columns: 300px 1fr;
+  }
+
+  @media screen and (max-width: $size-limited) {
+    display: block;
+  }
+}

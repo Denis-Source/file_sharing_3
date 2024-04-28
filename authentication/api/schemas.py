@@ -2,7 +2,7 @@ from fastapi.security import APIKeyHeader
 from pydantic import BaseModel as BaseSchema
 
 
-class HTTPExceptionSchema(BaseSchema):
+class ErrorSchema(BaseSchema):
     detail: str
 
 

@@ -114,3 +114,25 @@ def get_postgres_password() -> str:
         raise EnvironmentValueError(key)
 
     return value
+
+
+def get_front_end_url() -> str:
+    key = "FRONTEND_URL"
+    value = os.getenv(key)
+
+    if not value:
+        raise EnvironmentValueError(key)
+
+    return value
+
+
+def get_authentication_code_valid_minutes() -> int:
+    key = "AUTHENTICATION_CODE_VALID_MINUTES"
+    value = os.getenv(key, "5")
+
+    try:
+        value = int(value)
+    except ValueError:
+        raise EnvironmentValueError(key)
+
+    return value

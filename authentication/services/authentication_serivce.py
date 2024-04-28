@@ -1,15 +1,19 @@
 from datetime import timedelta, datetime
+from urllib.parse import urljoin
 
 import jwt
 from jwt import InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import APP_NAME
-from env import get_app_secret
+from env import get_app_secret, get_front_end_url, get_authentication_code_valid_minutes
+from models.code import Code
 from models.user import User
 from services.base import BaseService, ServiceError
 from services.client_service import ClientService
+from services.code_service import CodeService
 from services.user_service import UserService
+from services.utils import querify_url
 
 JWT_ALGORITHM = "HS256"
 JWT_REGEX = r"[\w-]*\.[\w-]*\.[\w-]*"
@@ -81,7 +85,7 @@ class AuthenticationService(BaseService):
 
         return decoded_token
 
-    async def create_oauth_token(
+    async def create_password_token(
             self,
             username: str,
             password: str,
@@ -121,3 +125,89 @@ class AuthenticationService(BaseService):
             raise AuthenticationError("User not found")
 
         return user
+
+    async def authenticate_user(self, username: str, password: str) -> User:
+        user_service = UserService(self.session)
+        user = await user_service.get_user_by_username(username)
+        if not user:
+            raise AuthenticationError("User not found")
+        if not await user_service.check_password(user, password):
+            raise AuthenticationError("Wrong password")
+
+        return user
+
+    # TODO tests??
+    @staticmethod
+    def get_auth_uri(client_id: int, redirect_uri: str) -> str:
+        return querify_url(
+            url=urljoin(get_front_end_url(), "login"),
+            client_id=client_id,
+            redirect_uri=redirect_uri
+        )
+
+    # TODO tests???
+    @staticmethod
+    def get_callback_uri(code: Code) -> str:
+        return querify_url(
+            code.redirect_uri,
+            code=code.value
+        )
+
+    # TODO tests
+    async def generate_code(self, client_id: int, redirect_uri: str) -> Code:
+        code_service = CodeService(self.session)
+        client_service = ClientService(self.session)
+        client = await client_service.get_by_id(client_id)
+        if not client:
+            raise AuthenticationError("Invalid client id")
+
+        return await code_service.create(
+            client=client,
+            redirect_uri=redirect_uri,
+            valid_until=datetime.now() + timedelta(minutes=get_authentication_code_valid_minutes())
+        )
+
+    # TODO tests
+    async def check_code(
+            self,
+            client_id: int,
+            client_secret: str,
+            redirect_uri: str,
+            value: str
+    ) -> Code:
+        client_service = ClientService(self.session)
+        client = await client_service.get_client_by_secret(client_secret)
+
+        if not client:
+            raise AuthenticationError("Wrong client secret")
+        if client.id != client_id:
+            raise AuthenticationError("Wrong client id")
+
+        code_service = CodeService(self.session)
+        code = await code_service.get_valid_code(value, client.id, redirect_uri)
+        if not code:
+            raise AuthenticationError("Invalid code")
+
+        return code
+
+    # TODO test
+    async def create_code_token(
+            self,
+            client_id: int,
+            client_secret: str,
+            redirect_uri: str,
+            value: str,
+            secret: str = None
+    ):
+        code = await self.check_code(
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
+            value=value
+        )
+        if not secret:
+            secret = get_app_secret()
+        return self.generate_token(
+            sub=code.client.user.username,
+            secret=secret
+        )

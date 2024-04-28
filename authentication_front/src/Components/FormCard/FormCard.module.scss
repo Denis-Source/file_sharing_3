@@ -1,0 +1,40 @@
+@import "../../mixins";
+
+.container {
+    @include m-card-shadowed;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100%;
+    max-width: 320px;
+    align-self: center;
+    justify-self: center;
+}
+
+.containerShake {
+    @extend .container;
+    animation: 0.2s ease-out 0s 1 a-shake;
+}
+
+.headerContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.errorMessage {
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.header {
+    text-align: center;
+    @include m-font-shadowed(36px, 400);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}

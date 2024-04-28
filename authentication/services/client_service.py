@@ -13,7 +13,9 @@ class ClientService(ModelService):
         return await self.session.scalar(
             select(Client)
             .where(Client.id == instance.id)
-            .options(selectinload(Client.user)))
+            .options(selectinload(Client.user))
+            .options(selectinload(Client.codes))
+        )
 
     async def create(self, name: str, user: User, commit: bool = True, **kwargs) -> Client:
         if await self.session.scalar(select(Client).where(Client.name == name)):
@@ -52,3 +54,10 @@ class ClientService(ModelService):
         await self.session.execute(qs)
         if commit:
             await self.session.commit()
+
+    # TODO tests
+    # TODO create by_id and delete methods in the base class
+    async def get_by_id(self, id_: int) -> Client:
+        return await self.session.scalar(
+            select(Client).where(Client.id == id_)
+        )
