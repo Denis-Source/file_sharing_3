@@ -106,14 +106,14 @@ class AuthenticationService(BaseService):
 
         return decoded_token
 
-    async def create_password_token(
+    async def create_password_pair(
             self,
             username: str,
             password: str,
             client_id: int,
             client_secret: str,
             secret: str = None
-    ):
+    ) -> tuple[str, str]:
         if not secret:
             secret = get_app_secret()
 
@@ -131,11 +131,18 @@ class AuthenticationService(BaseService):
         if client.id != client_id:
             raise AuthenticationError("Incorrect client id")
 
-        return self.generate_token(
+        access_token = self.generate_token(
             sub=user.username,
             type_=TokenTypes.ACCESS,
             secret=secret
         )
+        refresh = self.generate_token(
+            sub=user.username,
+            type_=TokenTypes.REFRESH,
+            secret=secret
+        )
+
+        return access_token, refresh
 
     async def get_user_by_token(self, token: str, secret: str = None) -> User:
         user_service = UserService(self.session)
@@ -208,7 +215,7 @@ class AuthenticationService(BaseService):
 
         return code
 
-    async def create_code_token(
+    async def create_code_pair(
             self,
             client_id: int,
             client_secret: str,

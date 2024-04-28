@@ -152,22 +152,22 @@ async def test_create_oauth_token_success(test_session: AsyncSession, mock_user:
     await user_service.set_password(mock_user, password)
 
     auth_service = AuthenticationService(test_session)
-    token = await auth_service.create_password_token(
+    access_token, refresh_token = await auth_service.create_password_pair(
         username=mock_user.username,
         password=password,
         client_id=mock_client.id,
         client_secret=mock_client.secret,
         secret=secret
     )
-
-    decoded_token = jwt.decode(
-        token,
-        secret,
-        JWT_ALGORITHM
-    )
-
     assert await user_service.check_password(mock_user, password)
-    assert decoded_token.get("sub") == mock_user.username
+    for token in [access_token, refresh_token]:
+        decoded_token = jwt.decode(
+            token,
+            secret,
+            JWT_ALGORITHM
+        )
+
+        assert decoded_token.get("sub") == mock_client.user.username
 
 
 async def test_create_oauth_token_user_not_exist(test_session: AsyncSession, mock_client: Client):
@@ -178,7 +178,7 @@ async def test_create_oauth_token_user_not_exist(test_session: AsyncSession, moc
 
     auth_service = AuthenticationService(test_session)
     with pytest.raises(AuthenticationError):
-        await auth_service.create_password_token(
+        await auth_service.create_password_pair(
             username=username,
             password=password,
             client_id=mock_client.id,
@@ -197,7 +197,7 @@ async def test_create_oauth_token_wrong_password(test_session: AsyncSession, moc
 
     assert not await user_service.check_password(mock_user, wrong_password)
     with pytest.raises(AuthenticationError):
-        await auth_service.create_password_token(
+        await auth_service.create_password_pair(
             username=mock_user.username,
             password=wrong_password,
             client_id=mock_client.id,
@@ -219,7 +219,7 @@ async def test_create_oauth_token_wrong_client_secret(test_session: AsyncSession
     assert await user_service.check_password(mock_user, password)
     assert wrong_client_secret != mock_client.secret
     with pytest.raises(AuthenticationError):
-        await auth_service.create_password_token(
+        await auth_service.create_password_pair(
             username=mock_user.username,
             password=password,
             client_id=mock_client.id,
@@ -239,7 +239,7 @@ async def test_create_oauth_token_wrong_client_id(test_session: AsyncSession, mo
 
     assert await user_service.check_password(mock_user, password)
     with pytest.raises(AuthenticationError):
-        await auth_service.create_password_token(
+        await auth_service.create_password_pair(
             username=mock_user.username,
             password=password,
             client_id=non_existent_id,
@@ -414,7 +414,7 @@ async def test_create_code_token_success(test_session: AsyncSession, mock_client
     auth_service = AuthenticationService(test_session)
     secret = "test_secret"
 
-    access_token, refresh_token = await auth_service.create_code_token(
+    access_token, refresh_token = await auth_service.create_code_pair(
         client_id=mock_client.id,
         client_secret=mock_client.secret,
         redirect_uri=mock_code.redirect_uri,

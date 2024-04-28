@@ -60,7 +60,7 @@ async def test_name_validation(test_session: AsyncSession, mock_user: User):
     last_authenticated = datetime.now()
 
     with pytest.raises(FieldValidationError):
-        client = Client(
+        Client(
             name=not_valid_name,
             last_authenticated=last_authenticated,
             user_id=mock_user.id

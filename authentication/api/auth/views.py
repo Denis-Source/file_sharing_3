@@ -72,7 +72,7 @@ async def token_code(data: CodeTokenRequest) -> TokenResponse:
     async with session:
         auth_service = AuthenticationService(session)
         try:
-            access_token, refresh_token = await auth_service.create_code_token(
+            access_token, refresh_token = await auth_service.create_code_pair(
                 client_id=data.client_id,
                 client_secret=data.client_secret,
                 redirect_uri=data.redirect_uri,
@@ -97,7 +97,7 @@ async def token_password(
         auth_service = AuthenticationService(session)
         # TODO what if client id cannot be cast into int
         try:
-            access_token = await auth_service.create_password_token(
+            access_token, _ = await auth_service.create_password_pair(
                 username=data.username,
                 password=data.password,
                 client_id=data.client_id,
