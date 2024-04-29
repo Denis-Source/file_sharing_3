@@ -1,17 +1,47 @@
 from urllib.parse import parse_qs, urlparse
 
+import pytest
+from fastapi import HTTPException
 from fastapi import status
 from httpx import AsyncClient
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.auth.dependencies import authenticate
 from api.auth.views import AUTH_URL_NAME, AUTH_URL_GET_AUTHORIZATION_URI, AUTH_URL_CALLBACK_CODE, AUTH_URL_TOKEN_CODE, \
     AUTH_URL_REFRESH, AUTH_URL_TOKEN_PASSWORD
 from env import get_frontend_url
 from models.client import Client
 from models.code import Code
 from models.user import User
+from services.authentication_serivce import AuthenticationService
 from tests.conftest import get_mock_uri
+
+
+async def test_authenticate_success(
+        test_session: AsyncSession,
+        mock_token_pair: tuple[str, str],
+        mock_user: User
+):
+    access_token, refresh_token = mock_token_pair
+    auth_service = AuthenticationService(test_session)
+    assert mock_user == await authenticate(
+        token=access_token,
+        auth_service=auth_service
+    )
+
+
+async def test_authenticate_invalid_token(
+        test_session: AsyncSession,
+        mock_user: User
+):
+    invalid_token = "invalid_token"
+    auth_service = AuthenticationService(test_session)
+    with pytest.raises(HTTPException):
+        await authenticate(
+            token=invalid_token,
+            auth_service=auth_service
+        )
 
 
 async def test_code_auth_url_success(
@@ -243,7 +273,8 @@ async def test_token_code_no_redirect_uri(
 async def test_token_password_success(
         mock_http_client: AsyncClient,
         mock_client: Client,
-        mock_user_with_password: tuple[User, str]
+        mock_user_with_password: tuple[User, str],
+        develop_mode_on: None
 ):
     mock_user, password = mock_user_with_password
     response = await mock_http_client.post(
@@ -260,6 +291,26 @@ async def test_token_password_success(
     assert response.status_code == status.HTTP_200_OK
     assert response_json.get("access_token")
     assert response_json.get("refresh_token") is None
+
+
+async def test_token_password_development_mode_off(
+        mock_http_client: AsyncClient,
+        mock_client: Client,
+        mock_user_with_password: tuple[User, str],
+        develop_mode_off: None
+):
+    mock_user, password = mock_user_with_password
+    response = await mock_http_client.post(
+        url=AUTH_URL_NAME + AUTH_URL_TOKEN_PASSWORD,
+        data={
+            "username": mock_user.username,
+            "password": password,
+            "client_id": mock_client.id,
+            "client_secret": mock_client.secret
+        }
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 async def test_token_password_no_username(

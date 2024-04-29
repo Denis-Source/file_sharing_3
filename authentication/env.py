@@ -11,6 +11,13 @@ PORT_REGEX = r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]" \
              r"{2}|655[0-2][0-9]|6553[0-5])$"
 
 
+def set_env_key(key: str, value: str):
+    if value is None:
+        os.environ.pop(key, None)
+    else:
+        os.environ[key] = value
+
+
 # App
 def get_app_secret() -> str:
     """SECRET_KEY should be from 12 to 36 long and can contain any printable symbol"""
@@ -22,6 +29,13 @@ def get_app_secret() -> str:
         raise EnvironmentValueError(key)
 
     return value
+
+
+def get_develop_mode() -> bool:
+    key = "APP_DEVELOP_MODE"
+    value = os.getenv(key, "False")
+
+    return value == "True"
 
 
 # Passwords

@@ -1,4 +1,5 @@
 import asyncio
+import os
 import random
 from datetime import datetime, timedelta
 from string import ascii_lowercase, digits
@@ -8,7 +9,7 @@ from sqlalchemy import AsyncAdaptedQueuePool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 
 from config import get_test_database_url, ADAPTERS
-from env import get_authentication_code_valid_minutes
+from env import get_authentication_code_valid_minutes, set_env_key
 from migrations.operations import migrate_head
 from models.client import Client
 from models.code import Code
@@ -162,3 +163,23 @@ async def mock_token_pair(test_session: AsyncSession, mock_user_with_password: U
 async def mock_auth_header(mock_token_pair: tuple[str, str]):
     access_token, _ = mock_token_pair
     return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture
+def develop_mode_on():
+    key = "APP_DEVELOP_MODE"
+    old_value = os.getenv(key)
+    os.environ[key] = "True"
+    yield
+
+    set_env_key(key, old_value)
+
+
+@pytest.fixture
+def develop_mode_off():
+    key = "APP_DEVELOP_MODE"
+    old_value = os.getenv(key)
+    os.environ[key] = "False"
+    yield
+
+    set_env_key(key, old_value)

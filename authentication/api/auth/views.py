@@ -6,6 +6,7 @@ from api.auth.schemas import CredentialsRequest, TokenResponse, AuthorizationRes
     CodeTokenRequest, PasswordTokenRequestForm, RefreshRequest
 from api.dependencies import get_auth_service
 from api.schemas import ErrorSchema
+from env import get_develop_mode
 from services.authentication_serivce import AuthenticationService, AuthenticationError
 
 AUTH_URL_NAME = "auth"
@@ -78,12 +79,14 @@ async def token_code(
     )
 
 
-# TODO Only allow in the develop mode
 @router.post(AUTH_URL_TOKEN_PASSWORD)
 async def token_password(
         data: Annotated[PasswordTokenRequestForm, Depends()],
-        auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
+        auth_service: Annotated[AuthenticationService, Depends(get_auth_service)],
+        develop_mode: Annotated[bool, Depends(get_develop_mode)]
 ) -> TokenResponse:
+    if not develop_mode:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only available in the develop mode")
     try:
         access_token, _ = await auth_service.create_password_pair(
             username=data.username,
