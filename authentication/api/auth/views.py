@@ -4,8 +4,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 
 from api.auth.schemas import CredentialsRequest, TokenResponse, AuthorizationResponse, \
     CodeTokenRequest, PasswordTokenRequestForm, RefreshRequest
+from api.dependancies import get_auth_service
 from api.schemas import ErrorSchema
-from config import get_session
 from services.authentication_serivce import AuthenticationService, AuthenticationError
 
 AUTH_URL_NAME = "auth"
@@ -34,87 +34,89 @@ async def code_auth_url(client_id: int, redirect_uri: str) -> AuthorizationRespo
 
 
 @router.post(AUTH_URL_CALLBACK_CODE)
-async def callback_code(client_id: int, redirect_uri: str,
-                        user_credentials: CredentialsRequest) -> AuthorizationResponse:
-    session = get_session()
-    async with session:
-        auth_service = AuthenticationService(session)
-        try:
-            await auth_service.authenticate_user(
-                username=user_credentials.username,
-                password=user_credentials.password
-            )
-            code = await auth_service.generate_code(
-                client_id=client_id,
-                redirect_uri=redirect_uri
-            )
-            return AuthorizationResponse(
-                redirect_uri=auth_service.get_callback_uri(code)
-            )
-        except AuthenticationError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+async def callback_code(
+        client_id: int, redirect_uri: str,
+        user_credentials: CredentialsRequest,
+        auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
+) -> AuthorizationResponse:
+    try:
+        await auth_service.authenticate_user(
+            username=user_credentials.username,
+            password=user_credentials.password
+        )
+        code = await auth_service.generate_code(
+            client_id=client_id,
+            redirect_uri=redirect_uri
+        )
+    except AuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return AuthorizationResponse(
+        redirect_uri=auth_service.get_callback_uri(code)
+    )
 
 
 @router.post(AUTH_URL_TOKEN_CODE)
-async def token_code(data: CodeTokenRequest) -> TokenResponse:
-    session = get_session()
-    async with session:
-        auth_service = AuthenticationService(session)
-        try:
-            access_token, refresh_token = await auth_service.create_code_pair(
-                client_id=data.client_id,
-                client_secret=data.client_secret,
-                redirect_uri=data.redirect_uri,
-                value=data.code
-            )
-            return TokenResponse(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                token_type="bearer"
-            )
-        except AuthenticationError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+async def token_code(
+        data: CodeTokenRequest,
+        auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
+) -> TokenResponse:
+    try:
+        access_token, refresh_token = await auth_service.create_code_pair(
+            client_id=data.client_id,
+            client_secret=data.client_secret,
+            redirect_uri=data.redirect_uri,
+            value=data.code
+        )
+    except AuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )
 
 
 # TODO Only allow in the develop mode
 @router.post(AUTH_URL_TOKEN_PASSWORD)
 async def token_password(
         data: Annotated[PasswordTokenRequestForm, Depends()],
+        auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
 ) -> TokenResponse:
-    session = get_session()
-    async with session:
-        auth_service = AuthenticationService(session)
-        try:
-            access_token, _ = await auth_service.create_password_pair(
-                username=data.username,
-                password=data.password,
-                client_id=data.client_id,
-                client_secret=data.client_secret
-            )
-        except AuthenticationError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-        return TokenResponse(
-            access_token=access_token,
-            refresh_token=None,
-            token_type="bearer"
+    try:
+        access_token, _ = await auth_service.create_password_pair(
+            username=data.username,
+            password=data.password,
+            client_id=data.client_id,
+            client_secret=data.client_secret
         )
+    except AuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=None,
+        token_type="bearer"
+    )
 
 
 @router.post(AUTH_URL_REFRESH)
-async def refresh(data: RefreshRequest) -> TokenResponse:
-    session = get_session()
-    async with session:
-        auth_service = AuthenticationService(session)
-        try:
-            access_token, refresh_token = await auth_service.refresh_pair(
-                refresh_token=data.refresh_token,
-                client_id=data.client_id,
-                client_secret=data.client_secret
-            )
-            return TokenResponse(
-                access_token=access_token,
-                refresh_token=refresh_token,
-                token_type="bearer"
-            )
-        except AuthenticationError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+async def refresh(
+        data: RefreshRequest,
+        auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
+) -> TokenResponse:
+    try:
+        access_token, refresh_token = await auth_service.refresh_pair(
+            refresh_token=data.refresh_token,
+            client_id=data.client_id,
+            client_secret=data.client_secret
+        )
+    except AuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        token_type="bearer"
+    )

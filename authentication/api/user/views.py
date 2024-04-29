@@ -2,10 +2,10 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from api.auth.utils import authenticate
-from api.schemas import ErrorSchema, MessageSchema
+from api.auth.dependencies import authenticate
+from api.dependancies import get_user_service
+from api.schemas import ErrorSchema, MessageResponse
 from api.user.schemas import UserResponse, SetPasswordRequest, RegisterRequest, RegisterResponse
-from config import get_session
 from models.base import FieldValidationError
 from models.user import User
 from services.base import UniquenessError
@@ -25,24 +25,23 @@ router = APIRouter(
 
 
 @router.post(USER_URL_REGISTER)
-async def register(data: RegisterRequest) -> RegisterResponse:
-    session = get_session()
-
-    async with session:
-        user_service = UserService(session)
-        try:
-            user = await user_service.create(
-                username=data.username,
-                plain_password=data.password
-            )
-        except (UniquenessError, FieldValidationError) as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-        return RegisterResponse(
-            id=user.id,
-            username=user.username,
-            created_at=user.created_at
+async def register(
+        data: RegisterRequest,
+        user_service: Annotated[UserService, Depends(get_user_service)]
+) -> RegisterResponse:
+    try:
+        user = await user_service.create(
+            username=data.username,
+            plain_password=data.password
         )
+    except (UniquenessError, FieldValidationError) as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    return RegisterResponse(
+        id=user.id,
+        username=user.username,
+        created_at=user.created_at
+    )
 
 
 @router.get(USER_URL_PROFILE, response_model=UserResponse)
@@ -57,13 +56,13 @@ async def profile(
 
 
 @router.post(USER_URL_SET_PASSWORD)
-async def set_password(data: SetPasswordRequest, user: Annotated[User, Depends(authenticate)]) -> MessageSchema:
-    session = get_session()
-    async with session:
-        service = UserService(session)
-        try:
-            await service.set_password(user, data.new_password)
-        except PasswordValidationError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-
-    return MessageSchema(detail="Password set")
+async def set_password(
+        data: SetPasswordRequest,
+        user: Annotated[User, Depends(authenticate)],
+        user_service: Annotated[UserService, Depends(get_user_service)]
+) -> MessageResponse:
+    try:
+        await user_service.set_password(user, data.new_password)
+    except PasswordValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return MessageResponse(detail="Password set")

@@ -6,7 +6,7 @@ class ErrorSchema(BaseSchema):
     detail: str
 
 
-class MessageSchema(BaseSchema):
+class MessageResponse(BaseSchema):
     detail: str
 
 
