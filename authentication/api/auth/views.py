@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, status, Depends
@@ -11,13 +12,14 @@ from services.authentication_serivce import AuthenticationService, Authenticatio
 
 AUTH_URL_NAME = "auth"
 
-AUTH_URL_GET_AUTHORIZATION_URI = "/get-auth-uri"
-AUTH_URL_TOKEN_PASSWORD = "/token-password/"
 
-AUTH_URL_TOKEN_CODE = "/token-code/"
-AUTH_URL_CALLBACK_CODE = "/login-code/"
+class AuthRoutes(str, Enum):
+    GET_AUTHORIZATION_URI = "/get-auth-uri"
+    TOKEN_PASSWORD = "/token-password/"
+    TOKEN_CODE = "/token-code/"
+    CALLBACK_CODE = "/login-code/"
+    REFRESH = "/refresh/"
 
-AUTH_URL_REFRESH = "/refresh/"
 
 router = APIRouter(
     prefix=f"/{AUTH_URL_NAME}",
@@ -27,14 +29,14 @@ router = APIRouter(
 
 
 # Move common things into dependencies (service, session etc)
-@router.get(AUTH_URL_GET_AUTHORIZATION_URI)
+@router.get(AuthRoutes.GET_AUTHORIZATION_URI)
 async def code_auth_url(client_id: int, redirect_uri: str) -> AuthorizationResponse:
     return AuthorizationResponse(
         redirect_uri=AuthenticationService.get_auth_uri(client_id, redirect_uri)
     )
 
 
-@router.post(AUTH_URL_CALLBACK_CODE)
+@router.post(AuthRoutes.CALLBACK_CODE)
 async def callback_code(
         client_id: int, redirect_uri: str,
         user_credentials: CredentialsRequest,
@@ -57,7 +59,7 @@ async def callback_code(
     )
 
 
-@router.post(AUTH_URL_TOKEN_CODE)
+@router.post(AuthRoutes.TOKEN_CODE)
 async def token_code(
         data: CodeTokenRequest,
         auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
@@ -79,7 +81,7 @@ async def token_code(
     )
 
 
-@router.post(AUTH_URL_TOKEN_PASSWORD)
+@router.post(AuthRoutes.TOKEN_PASSWORD)
 async def token_password(
         data: Annotated[PasswordTokenRequestForm, Depends()],
         auth_service: Annotated[AuthenticationService, Depends(get_auth_service)],
@@ -104,7 +106,7 @@ async def token_password(
     )
 
 
-@router.post(AUTH_URL_REFRESH)
+@router.post(AuthRoutes.REFRESH)
 async def refresh(
         data: RefreshRequest,
         auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]

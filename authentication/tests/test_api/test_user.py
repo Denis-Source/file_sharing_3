@@ -1,7 +1,7 @@
 from fastapi import status
 from httpx import AsyncClient
 
-from api.user.views import USER_URL_NAME, USER_URL_REGISTER, USER_URL_SET_PASSWORD, USER_URL_PROFILE
+from api.user.views import USER_URL_NAME, UserRoutes
 from models.user import User
 from tests.conftest import generate_mock_name, generate_mock_plain_password
 
@@ -13,7 +13,7 @@ async def test_register_success(
     password = generate_mock_plain_password()
 
     response = await mock_http_client.post(
-        url=USER_URL_NAME + USER_URL_REGISTER,
+        url=USER_URL_NAME + UserRoutes.REGISTER,
         json={
             "username": username,
             "password": password
@@ -33,7 +33,7 @@ async def test_register_no_username(
     password = generate_mock_plain_password()
 
     response = await mock_http_client.post(
-        url=USER_URL_NAME + USER_URL_REGISTER,
+        url=USER_URL_NAME + UserRoutes.REGISTER,
         json={
             "password": password
         }
@@ -47,7 +47,7 @@ async def test_register_no_password(
     username = generate_mock_name()
 
     response = await mock_http_client.post(
-        url=USER_URL_NAME + USER_URL_REGISTER,
+        url=USER_URL_NAME + UserRoutes.REGISTER,
         json={
             "username": username
         }
@@ -62,7 +62,7 @@ async def test_register_already_exists(
     password = generate_mock_plain_password()
 
     response = await mock_http_client.post(
-        url=USER_URL_NAME + USER_URL_REGISTER,
+        url=USER_URL_NAME + UserRoutes.REGISTER,
         json={
             "username": mock_user.username,
             "password": password
@@ -77,7 +77,7 @@ async def test_profile_success(
         mock_auth_header: dict
 ):
     response = await mock_http_client.get(
-        url=USER_URL_NAME + USER_URL_PROFILE,
+        url=USER_URL_NAME + UserRoutes.PROFILE,
         headers=mock_auth_header
     )
     response_json = response.json()
@@ -93,7 +93,7 @@ async def test_profile_unauthorized(
         mock_user: User,
 ):
     response = await mock_http_client.get(
-        url=USER_URL_NAME + USER_URL_PROFILE
+        url=USER_URL_NAME + UserRoutes.PROFILE
     )
     response_json = response.json()
 
@@ -107,7 +107,7 @@ async def test_set_password_success(
 ):
     password = generate_mock_plain_password()
     response = await mock_http_client.post(
-        url=USER_URL_NAME + USER_URL_SET_PASSWORD,
+        url=USER_URL_NAME + UserRoutes.SET_PASSWORD,
         json={
             "new_password": password
         },
@@ -123,7 +123,7 @@ async def test_set_password_no_password(
 ):
     password = generate_mock_plain_password()
     response = await mock_http_client.post(
-        url=USER_URL_NAME + USER_URL_SET_PASSWORD,
+        url=USER_URL_NAME + UserRoutes.SET_PASSWORD,
         json={},
         headers=mock_auth_header
     )
@@ -136,7 +136,7 @@ async def test_set_password_unauthorized(
 ):
     password = generate_mock_plain_password()
     response = await mock_http_client.post(
-        url=USER_URL_NAME + USER_URL_SET_PASSWORD,
+        url=USER_URL_NAME + UserRoutes.SET_PASSWORD,
         json={
             "new_password": password
         },

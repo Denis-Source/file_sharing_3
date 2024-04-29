@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -13,7 +14,11 @@ from services.client_service import ClientService
 from services.user_service import UserService
 
 CLIENT_URL_NAME = "client"
-CLIENT_URL_CREATE = "/create/"
+
+
+class ClientRoutes(str, Enum):
+    CREATE = "/create/"
+
 
 router = APIRouter(
     prefix=f"/{CLIENT_URL_NAME}",
@@ -22,7 +27,7 @@ router = APIRouter(
 )
 
 
-@router.post(CLIENT_URL_CREATE)
+@router.post(ClientRoutes.CREATE)
 async def register(
         data: RegisterClientRequest,
         user_service: Annotated[UserService, Depends(get_user_service)],

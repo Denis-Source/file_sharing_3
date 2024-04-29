@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,9 +14,13 @@ from services.password_service.validators import PasswordValidationError
 from services.user_service import UserService
 
 USER_URL_NAME = "users"
-USER_URL_REGISTER = "/register/"
-USER_URL_PROFILE = "/profile/"
-USER_URL_SET_PASSWORD = "/set-password/"
+
+
+class UserRoutes(str, Enum):
+    REGISTER = "/register/"
+    PROFILE = "/profile/"
+    SET_PASSWORD = "/set-password/"
+
 
 router = APIRouter(
     prefix=f"/{USER_URL_NAME}",
@@ -24,7 +29,7 @@ router = APIRouter(
 )
 
 
-@router.post(USER_URL_REGISTER)
+@router.post(UserRoutes.REGISTER)
 async def register(
         data: RegisterRequest,
         user_service: Annotated[UserService, Depends(get_user_service)]
@@ -44,7 +49,7 @@ async def register(
     )
 
 
-@router.get(USER_URL_PROFILE, response_model=UserResponse)
+@router.get(UserRoutes.PROFILE, response_model=UserResponse)
 async def profile(
         current_user: Annotated[User, Depends(authenticate)],
 ):
@@ -55,7 +60,7 @@ async def profile(
     )
 
 
-@router.post(USER_URL_SET_PASSWORD)
+@router.post(UserRoutes.SET_PASSWORD)
 async def set_password(
         data: SetPasswordRequest,
         user: Annotated[User, Depends(authenticate)],

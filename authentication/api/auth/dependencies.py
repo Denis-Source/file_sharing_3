@@ -3,12 +3,12 @@ from typing import Annotated
 from fastapi import HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer
 
-from api.auth.views import AUTH_URL_NAME, AUTH_URL_TOKEN_PASSWORD
+from api.auth.views import AUTH_URL_NAME, AuthRoutes
 from api.dependencies import get_auth_service
 from models.user import User
 from services.authentication_serivce import AuthenticationService, AuthenticationError
 
-oauth2_password_scheme = OAuth2PasswordBearer(tokenUrl=AUTH_URL_NAME + AUTH_URL_TOKEN_PASSWORD)
+oauth2_password_scheme = OAuth2PasswordBearer(tokenUrl=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD)
 
 
 async def authenticate(
