@@ -208,7 +208,8 @@ class AuthenticationService(BaseService):
             client_id: int,
             client_secret: str,
             redirect_uri: str,
-            value: str
+            value: str,
+            invalidate: bool = False
     ) -> Code:
         client_service = ClientService(self.session)
         client = await client_service.get_client_by_secret(client_secret)
@@ -222,6 +223,9 @@ class AuthenticationService(BaseService):
         code = await code_service.get_valid_code(value, client.id, redirect_uri)
         if not code:
             raise AuthenticationError("Invalid code")
+
+        if invalidate:
+            await code_service.set_is_used(code)
 
         return code
 
@@ -237,7 +241,8 @@ class AuthenticationService(BaseService):
             client_id=client_id,
             client_secret=client_secret,
             redirect_uri=redirect_uri,
-            value=value
+            value=value,
+            invalidate=True
         )
         if not secret:
             secret = get_app_secret()

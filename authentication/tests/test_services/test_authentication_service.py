@@ -412,6 +412,21 @@ async def test_check_code_success(test_session: AsyncSession, mock_client: Clien
     )
 
     assert code == mock_code
+    assert not mock_code.is_used
+
+
+async def test_check_code_success_invalidated(test_session: AsyncSession, mock_client: Client, mock_code: Code):
+    auth_service = AuthenticationService(test_session)
+    code = await auth_service.check_code(
+        client_id=mock_client.id,
+        client_secret=mock_client.secret,
+        redirect_uri=mock_code.redirect_uri,
+        value=mock_code.value,
+        invalidate=True
+    )
+
+    assert code == mock_code
+    assert code.is_used
 
 
 async def test_check_code_wrong_client_secret(test_session: AsyncSession, mock_client: Client, mock_code: Code):
@@ -456,6 +471,8 @@ async def test_create_code_token_success(test_session: AsyncSession, mock_client
             JWT_ALGORITHM
         )
         assert decoded_token.get("sub") == mock_client.user.username
+
+    assert mock_code.is_used
 
 
 async def test_refresh_pair_success(test_session: AsyncSession, mock_client: Client, mock_token_pair: tuple[str, str]):

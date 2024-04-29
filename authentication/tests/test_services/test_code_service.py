@@ -33,6 +33,17 @@ async def test_get_by_id(test_session: AsyncSession, mock_code: Code):
     assert mock_code == await service.get_by_id(id_=mock_code.id)
 
 
+async def test_set_is_used(test_session: AsyncSession, mock_code: Code):
+    service = CodeService(test_session)
+    old_is_used = mock_code.is_used
+
+    await service.set_is_used(
+        instance=mock_code,
+        is_used=not old_is_used
+    )
+    assert mock_code != old_is_used
+
+
 async def test_get_by_id_not_exist(test_session: AsyncSession):
     non_existent_id = int(1e9 + 42)
     service = CodeService(test_session)
@@ -69,6 +80,19 @@ async def test_get_valid_code_wrong_client_id(test_session: AsyncSession, mock_c
 async def test_get_valid_code_wrong_valid_until(test_session: AsyncSession, mock_code: Code):
     service = CodeService(test_session)
     mock_code.valid_until = datetime.now() - timedelta(minutes=10)
+    test_session.add(mock_code)
+    await test_session.commit()
+
+    assert not await service.get_valid_code(
+        value=mock_code.value,
+        client_id=mock_code.client.id,
+        redirect_uri=mock_code.redirect_uri
+    )
+
+
+async def test_get_valid_code_wrong_is_used(test_session: AsyncSession, mock_code: Code):
+    service = CodeService(test_session)
+    mock_code.is_used = True
     test_session.add(mock_code)
     await test_session.commit()
 

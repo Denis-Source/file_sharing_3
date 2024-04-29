@@ -39,12 +39,21 @@ class CodeService(ModelService):
             instance = await self._preload_relationships(instance)
         return instance
 
+    async def set_is_used(self, instance: Code, is_used: bool = True, commit: bool = True) -> Code:
+        instance.is_used = is_used
+        self.session.add(instance)
+        if commit:
+            await self.session.commit()
+
+        return instance
+
     async def get_valid_code(self, value: str, client_id: int, redirect_uri: str) -> Code:
         code = await self.session.scalar(
             select(Code).where(
                 Code.value == value,
                 Code.client_id == client_id,
                 Code.redirect_uri == redirect_uri,
+                Code.is_used == False,
                 Code.valid_until > datetime.now()
             )
         )

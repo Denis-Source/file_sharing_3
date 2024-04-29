@@ -6,7 +6,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from models.base import Base
 
 
-# TODO Make used field so that the code expires after being used
 class Code(Base):
     __tablename__ = "codes"
 
@@ -18,6 +17,8 @@ class Code(Base):
         ForeignKey("clients.id", ondelete="CASCADE"), nullable=False)
     redirect_uri: Mapped[str] = mapped_column(
         nullable=False)
+    is_used: Mapped[bool] = mapped_column(
+        default=False)
     valid_until: Mapped[datetime] = mapped_column(
         nullable=False)
     created_at: Mapped[datetime] = mapped_column(
