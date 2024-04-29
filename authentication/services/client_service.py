@@ -34,9 +34,12 @@ class ClientService(ModelService):
         return instance
 
     async def get_client_by_secret(self, secret: str) -> Client:
-        return await self.session.scalar(
+        client = await self.session.scalar(
             select(Client).where(Client.secret == secret)
         )
+        if client:
+            client = await self._preload_relationships(client)
+        return client
 
     async def set_last_authenticated(self, instance: Client, date: datetime = None, commit: bool = True) -> Client:
         if not date:
