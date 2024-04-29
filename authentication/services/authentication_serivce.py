@@ -85,7 +85,7 @@ class AuthenticationService(BaseService):
         )
 
     @staticmethod
-    def decode_token(token: str, secret: str = None) -> dict:
+    def decode_token(token: str, required_type: TokenTypes = None, secret: str = None) -> dict:
         if not secret:
             secret = get_app_secret()
 
@@ -103,6 +103,10 @@ class AuthenticationService(BaseService):
 
         if decoded_token.get(TOKEN_ISS) != APP_NAME:
             raise TokenError
+
+        if required_type:
+            if decoded_token.get(TOKEN_TYPE) != required_type:
+                raise TokenError
 
         return decoded_token
 
@@ -152,12 +156,12 @@ class AuthenticationService(BaseService):
             required_token_type=TokenTypes.ACCESS,
             secret: str = None) -> User:
         user_service = UserService(self.session)
-        decoded_token = self.decode_token(token, secret)
-
+        decoded_token = self.decode_token(
+            token=token,
+            required_type=required_token_type,
+            secret=secret
+        )
         username = decoded_token.get("sub")
-        token_type = decoded_token.get("type")
-        if token_type != required_token_type:
-            raise AuthenticationError("Token should be of access type")
 
         user = await user_service.get_user_by_username(username=username)
         if not user:

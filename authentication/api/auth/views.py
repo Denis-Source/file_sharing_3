@@ -3,12 +3,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, status, Depends
 
+from api.auth.dependencies import oauth2_password_scheme
 from api.auth.schemas import CredentialsRequest, TokenResponse, AuthorizationResponse, \
     CodeTokenRequest, PasswordTokenRequestForm, RefreshRequest
 from api.dependencies import get_auth_service
-from api.schemas import ErrorSchema
+from api.schemas import ErrorSchema, MessageResponse
 from env import get_develop_mode
-from services.authentication_serivce import AuthenticationService, AuthenticationError
+from services.authentication_serivce import AuthenticationService, AuthenticationError, TokenTypes
 
 AUTH_URL_NAME = "auth"
 
@@ -19,6 +20,7 @@ class AuthRoutes(str, Enum):
     TOKEN_CODE = "/token-code/"
     CALLBACK_CODE = "/login-code/"
     REFRESH = "/refresh/"
+    VERIFY = "/verify/"
 
 
 router = APIRouter(
@@ -124,4 +126,22 @@ async def refresh(
         access_token=access_token,
         refresh_token=refresh_token,
         token_type="bearer"
+    )
+
+
+@router.post(AuthRoutes.VERIFY)
+async def verify(
+        token: Annotated[str, Depends(oauth2_password_scheme)],
+        auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
+) -> MessageResponse:
+    try:
+        auth_service.decode_token(
+            token=token,
+            required_type=TokenTypes.ACCESS
+        )
+    except AuthenticationError as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    return MessageResponse(
+        detail="Token is valid"
     )

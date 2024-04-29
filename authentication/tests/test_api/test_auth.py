@@ -447,3 +447,49 @@ async def test_refresh_no_client_secret(
         }
     )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+
+
+async def test_verify_success(
+        mock_http_client: AsyncClient,
+        mock_auth_header: dict
+):
+    response = await mock_http_client.post(
+        AUTH_URL_NAME + AuthRoutes.VERIFY,
+        headers=mock_auth_header
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+
+
+async def test_verify_wrong_token_type(
+        mock_http_client: AsyncClient,
+        mock_token_pair: tuple[str, str]
+):
+    _, refresh_token = mock_token_pair
+    response = await mock_http_client.post(
+        AUTH_URL_NAME + AuthRoutes.VERIFY,
+        headers={"Authorization": f"Bearer {refresh_token}"}
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_verify_wrong_token(
+        mock_http_client: AsyncClient
+):
+    response = await mock_http_client.post(
+        AUTH_URL_NAME + AuthRoutes.VERIFY,
+        headers={"Authorization": f"Bearer invalid_token"}
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+async def test_verify_no_token(
+        mock_http_client: AsyncClient
+):
+    response = await mock_http_client.post(
+        AUTH_URL_NAME + AuthRoutes.VERIFY
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED

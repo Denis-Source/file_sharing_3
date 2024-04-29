@@ -51,12 +51,12 @@ async def register(
 
 @router.get(UserRoutes.PROFILE, response_model=UserResponse)
 async def profile(
-        current_user: Annotated[User, Depends(authenticate)],
+        user: Annotated[User, Depends(authenticate)],
 ):
     return UserResponse(
-        id=current_user.id,
-        username=current_user.username,
-        created_at=current_user.created_at
+        id=user.id,
+        username=user.username,
+        created_at=user.created_at
     )
 
 

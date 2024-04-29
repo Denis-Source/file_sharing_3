@@ -40,6 +40,10 @@ class RefreshRequest(BaseSchema):
     client_secret: str
 
 
+class VerifyRequest(BaseSchema):
+    access_token: str
+
+
 class TokenResponse(BaseSchema):
     access_token: str
     refresh_token: Optional[str]

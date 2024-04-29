@@ -48,7 +48,7 @@ def test_encode(mock_user: User):
     assert decoded_token.get("sub") == mock_user.username
 
 
-def test_decode():
+def test_decode_success():
     secret = "test_secret"
     token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
             ".eyJpc3MiOiJhdXRoZW50aWNhdGlvbl9zZXJ" \
@@ -59,7 +59,29 @@ def test_decode():
             "DWQmyXyE"
     sub = 1234567890
 
-    decoded_token = AuthenticationService.decode_token(token, secret)
+    decoded_token = AuthenticationService.decode_token(
+        token=token,
+        secret=secret
+    )
+    assert sub == decoded_token.get("sub")
+
+
+def test_decode_success_required_type():
+    secret = "test_secret"
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
+            ".eyJpc3MiOiJhdXRoZW50aWNhdGlvbl9zZXJ" \
+            "2aWNlIiwic3ViIjoxMjM0NTY3ODkwLCJpYXQ" \
+            "iOjE3MTE2NzExMDAsImV4cCI6MjAwMDAwMDA" \
+            "wMDAsInR5cGUiOiJhY2Nlc3MifQ" \
+            ".gvEFhc3sARluVYaT6SNJFfX14b5UtYH7Tg7" \
+            "_7fhIPnw"
+    sub = 1234567890
+
+    decoded_token = AuthenticationService.decode_token(
+        token=token,
+        required_type=TokenTypes.ACCESS,
+        secret=secret
+    )
     assert sub == decoded_token.get("sub")
 
 
@@ -72,7 +94,10 @@ def test_decode_invalid_signature():
             ".HXHmIoegomXWsgWOVGlh-QmIzu_Hld68LywdCD7AjCZ"
 
     with pytest.raises(TokenError):
-        AuthenticationService.decode_token(token, secret)
+        AuthenticationService.decode_token(
+            token=token,
+            secret=secret
+        )
 
 
 def test_decode_invalid_exp():
@@ -84,7 +109,29 @@ def test_decode_invalid_exp():
             ".VdcY5GZkIT2MLPPRZ_ECtTed9m_LbeA5x0Jit_WS5Os"
 
     with pytest.raises(TokenError):
-        AuthenticationService.decode_token(token, secret)
+        AuthenticationService.decode_token(
+            token=token,
+            secret=secret
+        )
+
+
+def test_decode_not_required_type():
+    secret = "test_secret"
+    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
+            ".eyJpc3MiOiJhdXRoZW50aWNhdGlvbl9zZXJ" \
+            "2aWNlIiwic3ViIjoxMjM0NTY3ODkwLCJpYXQ" \
+            "iOjE3MTE2NzExMDAsImV4cCI6MjAwMDAwMDA" \
+            "wMDAsInR5cGUiOiJhY2Nlc3MifQ" \
+            ".gvEFhc3sARluVYaT6SNJFfX14b5UtYH7Tg7" \
+            "_7fhIPnw"
+    sub = 1234567890
+
+    with pytest.raises(TokenError):
+        AuthenticationService.decode_token(
+            token=token,
+            required_type=TokenTypes.REFRESH,
+            secret=secret
+        )
 
 
 def test_decode_missing_exp():
@@ -96,7 +143,10 @@ def test_decode_missing_exp():
             ".ZGcqMyiTpKY9A2yjQ4XTokiLXKDmKIQYZmqEp-Ce-8I"
 
     with pytest.raises(TokenError):
-        AuthenticationService.decode_token(token, secret)
+        AuthenticationService.decode_token(
+            token=token,
+            secret=secret
+        )
 
 
 def test_decode_invalid_iss():
@@ -107,7 +157,10 @@ def test_decode_invalid_iss():
             ".N3L45Fx4LrhqzdgO5TMYaDkmU-OKHYDUjUDU36wHXug"
 
     with pytest.raises(TokenError):
-        AuthenticationService.decode_token(token, secret)
+        AuthenticationService.decode_token(
+            token=token,
+            secret=secret
+        )
 
 
 def test_decode_missing_iss():
@@ -119,7 +172,10 @@ def test_decode_missing_iss():
             ".1VF2pRozuF0p7bRN7aU5Ed4MPYOADnrkxbqCWM9_L9Y"
 
     with pytest.raises(TokenError):
-        AuthenticationService.decode_token(token, secret)
+        AuthenticationService.decode_token(
+            token=token,
+            secret=secret
+        )
 
 
 def test_decode_invalid_format():
@@ -131,7 +187,10 @@ def test_decode_invalid_format():
             "HTQbdQhY"
 
     with pytest.raises(TokenError):
-        AuthenticationService.decode_token(token, secret)
+        AuthenticationService.decode_token(
+            token=token,
+            secret=secret
+        )
 
 
 def test_decode_no_sub():
@@ -141,7 +200,10 @@ def test_decode_no_sub():
             ".nfxWdUayk54niAULlEOjvac-fUdltdWIYY1sg1Yd5Ts"
 
     with pytest.raises(TokenError):
-        AuthenticationService.decode_token(token, secret)
+        AuthenticationService.decode_token(
+            token=token,
+            secret=secret
+        )
 
 
 async def test_create_oauth_token_success(test_session: AsyncSession, mock_user_with_password: tuple[User, str],
