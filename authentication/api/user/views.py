@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.auth.dependencies import authenticate
-from api.dependancies import get_user_service
+from api.dependencies import get_user_service
 from api.schemas import ErrorSchema, MessageResponse
 from api.user.schemas import UserResponse, SetPasswordRequest, RegisterRequest, RegisterResponse
 from models.base import FieldValidationError
