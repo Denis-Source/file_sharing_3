@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status, Depends
 
 from api.auth.schemas import CredentialsRequest, TokenResponse, AuthorizationResponse, \
     CodeTokenRequest, PasswordTokenRequestForm, RefreshRequest
-from api.dependancies import get_auth_service
+from api.dependencies import get_auth_service
 from api.schemas import ErrorSchema
 from services.authentication_serivce import AuthenticationService, AuthenticationError
 

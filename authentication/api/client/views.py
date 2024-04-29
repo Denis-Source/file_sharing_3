@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi import status
 
 from api.client.schemas import RegisterClientRequest, RegisterClientResponse
-from api.dependancies import get_client_service, get_user_service
+from api.dependencies import get_client_service, get_user_service
 from api.schemas import ErrorSchema
 from models.base import FieldValidationError
 from services.base import UniquenessError
