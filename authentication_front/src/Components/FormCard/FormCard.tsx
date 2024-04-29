@@ -21,7 +21,7 @@ const FormCard: React.FC<Props> = (
         <div className={errored ? styles.containerShake : styles.container}>
             <div className={styles.headerContainer}>
                 {header && <h1 className={styles.header}>{header}</h1>}
-                {errorMessage && <span className={styles.errorMessage}>{errorMessage}</span>}
+                <span className={styles.errorMessage}>{errorMessage}</span>
             </div>
             <form className={styles.form} onSubmit={onSubmit}>
                 {children}

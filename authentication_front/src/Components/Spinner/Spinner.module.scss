@@ -1,0 +1,26 @@
+@import "../../mixins";
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shadow {
+    @include m-drop-shadowed;
+}
+
+.icon {
+    animation: spin 1s linear infinite;
+    width: 45px;
+    height: 45px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}

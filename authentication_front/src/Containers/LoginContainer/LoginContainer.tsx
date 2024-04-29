@@ -9,6 +9,7 @@ interface Props {
     errored: boolean;
     setErrored: (initialState: boolean) => void;
     errorMessage: string;
+    setErrorMessage: (initialState: string) => void;
     formData: LoginDTO | null;
     setFormData: (initialState: LoginDTO) => void;
 }
@@ -18,6 +19,7 @@ const LoginContainer: React.FC<Props> = (
         errored,
         setErrored,
         errorMessage,
+        setErrorMessage,
         formData,
         setFormData,
     }) => {
@@ -32,15 +34,14 @@ const LoginContainer: React.FC<Props> = (
     const [passwordErrored, setPasswordErrored] = useState<boolean>(false);
 
     useEffect(() => {
-        if (username) {
-            USERNAME_REGEX.test(username) ? setUsernameErrored(false) : setUsernameErrored(true);
-        }
+        if (!username) return
+        USERNAME_REGEX.test(username) ? setUsernameErrored(false) : setUsernameErrored(true);
+
     }, [username]);
 
     useEffect(() => {
-        if (password) {
-            PASSWORD_REGEX.test(password) ? setPasswordErrored(false) : setPasswordErrored(true);
-        }
+        if (!password) return
+        PASSWORD_REGEX.test(password) ? setPasswordErrored(false) : setPasswordErrored(true);
     }, [password]);
 
     const onSubmit = (event: FormEvent) => {
@@ -54,9 +55,12 @@ const LoginContainer: React.FC<Props> = (
         } else {
             setErrored(true);
             setTimeout(
-                () => {setErrored(false)},
+                () => {
+                    setErrored(false);
+                    setErrorMessage("Incorrect inputs");
+                },
                 100
-                )
+            )
         }
     };
 

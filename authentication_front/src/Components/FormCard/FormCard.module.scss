@@ -4,9 +4,9 @@
     @include m-card-shadowed;
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 15px;
     width: 100%;
-    max-width: 320px;
+    max-width: 270px;
     align-self: center;
     justify-self: center;
 }
@@ -19,13 +19,13 @@
 .headerContainer {
     display: flex;
     flex-direction: column;
-    gap: 10px;
 }
 
 .errorMessage {
     text-align: center;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
+    height: 18px;
 }
 
 .header {
