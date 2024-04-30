@@ -1,31 +1,35 @@
-import React, {FormEvent, ReactNode} from "react";
+import React, {FormEvent, useEffect, useState} from "react";
 import styles from "./FormCard.module.scss";
 
-interface Props {
+interface Props extends React.HTMLAttributes<HTMLFormElement> {
     onSubmit: (event: FormEvent) => void;
-    errored: boolean;
-    errorMessage?: string;
+    message: string | null;
+    errored?: boolean;
     header?: string;
-    children?: ReactNode | ReactNode[];
 }
 
 const FormCard: React.FC<Props> = (
     {
-        onSubmit,
-        errored,
-        errorMessage,
+        message,
         header,
-        children
+        errored = false,
+        ...restProps
     }) => {
+
+    const [shaken, setShaken] = useState<boolean>(Boolean(errored))
+    useEffect(() => {
+        message && setShaken(true)
+        setInterval(() => setShaken(false), 200)
+    }, [errored, message])
+
+
     return (
-        <div className={errored ? styles.containerShake : styles.container}>
+        <div className={shaken ? styles.containerShake : styles.container}>
             <div className={styles.headerContainer}>
                 {header && <h1 className={styles.header}>{header}</h1>}
-                <span className={styles.errorMessage}>{errorMessage}</span>
+                <span className={styles.errorMessage}>{message}</span>
             </div>
-            <form className={styles.form} onSubmit={onSubmit}>
-                {children}
-            </form>
+            <form className={styles.form}{...restProps}/>
         </div>
     );
 };

@@ -1,15 +1,25 @@
 import React from "react";
 import styles from "./Button.module.scss";
-import {Strings} from "./Strings";
 
-interface Props {
+
+interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     text?: string;
-    onClick?: () => void;
 }
 
-const Button: React.FC<Props> = ({text, onClick}) => {
+enum Strings {
+    Submit = "Submit",
+}
+
+
+const Button: React.FC<Props> = (
+    {
+        text,
+        ...restProps
+    }) => {
     return (
-        <button className={styles.button} onSubmit={onClick}>
+        <button
+            className={styles.button}
+            {...restProps}>
             {text ? text : Strings.Submit}
         </button>
     );

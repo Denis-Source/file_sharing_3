@@ -4,5 +4,4 @@ export enum Strings {
     GenericErrorMessage = "Opps!",
     GenericErrorDescription = "Some error occurred",
 
-    GhostDesc = "Ghost"
 }

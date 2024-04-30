@@ -1,8 +1,7 @@
 import React from "react";
 import styles from "./Ghost.module.scss";
 import ghostIcon from "../../Static/Images/ghost.svg"
-import { motion } from "framer-motion";
-import {Strings} from "../../strings";
+import {motion} from "framer-motion";
 
 export enum Animations {
     Wobble = "wobble",
@@ -10,7 +9,19 @@ export enum Animations {
     Nod = "nod",
 }
 
-const Ghost = ({ animation }: { animation: Animations }) => {
+interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
+    animation: Animations
+}
+
+enum Strings {
+    GhostDesc = "Ghost"
+}
+
+const Ghost: React.FC<Props> = (
+    {
+        animation,
+        ...restProps
+    }) => {
     let ghostStyle;
     switch (animation) {
         case Animations.Wobble:
@@ -26,14 +37,15 @@ const Ghost = ({ animation }: { animation: Animations }) => {
     return (
         <motion.div
             layout
-            animate={{ opacity: 1 }}
-            initial={{ opacity: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
+            animate={{opacity: 1}}
+            initial={{opacity: 0}}
+            exit={{opacity: 0}}
+            transition={{duration: 1}}
             className={ghostStyle}
         >
             <div className={styles.iconWrapper}>
                 <img
+                    {...restProps}
                     className={styles.icon}
                     src={ghostIcon}
                     alt={Strings.GhostDesc}

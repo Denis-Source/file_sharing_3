@@ -2,13 +2,16 @@ import React from "react";
 
 import styles from "./Spinner.module.scss";
 import spinner from "./Spinner.svg";
-import {Strings} from "./Strings";
+
+enum Strings {
+    SpinnerAlt = "SpinnerLayout",
+}
 
 const Spinner = () => {
     return (
         <div className={styles.container}>
             <div className={styles.shadow}>
-                <img className={styles.icon} src={spinner} alt={Strings.SpinnerAlt} />
+                <img className={styles.icon} src={spinner} alt={Strings.SpinnerAlt}/>
             </div>
         </div>
     );

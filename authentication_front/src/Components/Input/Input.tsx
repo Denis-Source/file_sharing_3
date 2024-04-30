@@ -1,33 +1,28 @@
 import React from "react";
 import styles from "./Input.module.scss";
 
-interface Props {
-    type: "text" | "password";
-    placeHolder: string;
-    value: string | undefined;
-    setValue: (initialState: string) => void;
-    errored?: boolean;
+interface Props extends React.InputHTMLAttributes<HTMLInputElement> {
+    label: string;
+    setValue: (value: string) => void;
     shadowed?: boolean;
 }
 
-const Input: React.FC<Props> = ({
-    type,
-    placeHolder,
-    setValue,
-    value,
-    errored = false,
-    shadowed = false,
-}) => {
+const Input: React.FC<Props> = (
+    {
+        label,
+        setValue,
+        shadowed = false,
+        ...restProps
+    }) => {
     return (
-        <input
-            placeholder={placeHolder}
-            className={
-                shadowed ? styles.inputShadowed : errored ? styles.inputErrored : styles.input
-            }
-            type={type}
-            value={value}
-            onChange={event => setValue(event.target.value)}
-        />
+        <label className={styles.label}>
+            <span className={styles.labelText}>{label}</span>
+            <input
+                className={shadowed ? styles.inputShadowed : styles.input}
+                onChange={event => setValue(event.target.value)}
+                {...restProps}
+            />
+        </label>
     );
 };
 

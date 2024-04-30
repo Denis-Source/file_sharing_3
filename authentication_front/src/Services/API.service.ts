@@ -4,10 +4,6 @@ export const getAPIUrl = (): string => {
     return "http://127.0.0.1:8000/";
 };
 
-const capitalizeString = (string: string): string => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-};
-
 export class APIError extends Error {
     constructor(message: string) {
         super(message);
@@ -27,21 +23,16 @@ export const fetchAPI = async (
         ...options,
     };
     let url = `${getAPIUrl()}${path}`;
-    if (params) {
-        url += `?${queryString.stringify(params)}`
+    if (params) url += `?${queryString.stringify(params)}`
+    let response;
+    try {
+        response = await fetch(url, options);
+    } catch (e) {
+        throw new APIError("Some error occurred!")
     }
-
-    const response = await fetch(url, options);
-    if (response.ok) {
-        return response;
-    } else {
-        let message: string | any = Object.values(await response.json())[0];
-        if (message instanceof Array) {
-            message = message[0] as string;
-        }
-        message = capitalizeString(message.toLowerCase());
-        throw new APIError(message);
-    }
+    if (response.ok) return response;
+    const {detail} = await response.json();
+    throw new APIError(detail);
 };
 
 export const fetchAPIJSON = async (
