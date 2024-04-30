@@ -6,7 +6,6 @@ alembic
 
 pytest
 pytest_asyncio
-pydantic[email]
 
 pyjwt
 
