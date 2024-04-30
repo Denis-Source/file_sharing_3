@@ -5,28 +5,30 @@ import LoginPage from "./Pages/LoginPage/LoginPage";
 
 export enum RouterPaths {
     Login = "/login",
-    Error = "/error"
+    Error = "/error",
 }
-
 
 export const router = createBrowserRouter([
     {
         path: RouterPaths.Login,
-        element: <LoginPage/>,
+        element: <LoginPage />,
     },
     {
         path: RouterPaths.Error,
-        element: <ErrorPage
-            message={Strings.GenericErrorMessage}
-            description={Strings.GenericErrorDescription}
-        />
+        element: (
+            <ErrorPage
+                message={Strings.GenericErrorMessage}
+                description={Strings.GenericErrorDescription}
+            />
+        ),
     },
     {
         path: "*",
-        element:
+        element: (
             <ErrorPage
                 message={Strings.NoPageFoundMessage}
                 description={Strings.NoPageFoundDescription}
             />
+        ),
     },
-])
+]);

@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "./Ghost.module.scss";
-import ghostIcon from "../../Static/Images/ghost.svg"
+import ghostIcon from "../../Static/Images/ghost.svg";
 import {motion} from "framer-motion";
 
 export enum Animations {
@@ -10,18 +10,14 @@ export enum Animations {
 }
 
 interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
-    animation: Animations
+    animation: Animations;
 }
 
 enum Strings {
-    GhostDesc = "Ghost"
+    GhostDesc = "Ghost",
 }
 
-const Ghost: React.FC<Props> = (
-    {
-        animation,
-        ...restProps
-    }) => {
+const Ghost: React.FC<Props> = ({animation, ...restProps}) => {
     let ghostStyle;
     switch (animation) {
         case Animations.Wobble:

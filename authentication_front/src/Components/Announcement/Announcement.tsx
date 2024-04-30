@@ -8,18 +8,11 @@ interface Props extends React.HTMLAttributes<HTMLDivElement> {
     description: string | undefined;
 }
 
-const Announcement: React.FC<Props> = (
-    {
-        animation,
-        header,
-        description,
-        ...restProps
-    }
-) => {
+const Announcement: React.FC<Props> = ({animation, header, description, ...restProps}) => {
     return (
         <div className={styles.container} {...restProps}>
             <div className={restProps.onClick ? styles.ghostClickable : styles.ghost}>
-                <Ghost animation={animation}/>
+                <Ghost animation={animation} />
                 <h2 className={styles.header}>{header}</h2>
                 {description && (
                     <div className={styles.descriptionContainer}>

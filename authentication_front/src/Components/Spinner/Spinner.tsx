@@ -11,7 +11,7 @@ const Spinner = () => {
     return (
         <div className={styles.container}>
             <div className={styles.shadow}>
-                <img className={styles.icon} src={spinner} alt={Strings.SpinnerAlt}/>
+                <img className={styles.icon} src={spinner} alt={Strings.SpinnerAlt} />
             </div>
         </div>
     );

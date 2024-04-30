@@ -23,12 +23,12 @@ export const fetchAPI = async (
         ...options,
     };
     let url = `${getAPIUrl()}${path}`;
-    if (params) url += `?${queryString.stringify(params)}`
+    if (params) url += `?${queryString.stringify(params)}`;
     let response;
     try {
         response = await fetch(url, options);
     } catch (e) {
-        throw new APIError("Some error occurred!")
+        throw new APIError("Some error occurred!");
     }
     if (response.ok) return response;
     const {detail} = await response.json();
@@ -39,7 +39,7 @@ export const fetchAPIJSON = async (
     path: string,
     method: "GET" | "POST" | "PUT" | "DELETE",
     body?: object,
-    params?: object,
+    params?: object
 ): Promise<any> => {
     const options = {
         method: method,

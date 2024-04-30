@@ -2,42 +2,41 @@
 @import "../../mixins";
 
 .container {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: center;
-  gap: 100px;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    gap: 100px;
 }
 
 .ghost {
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .ghostClickable {
-  @extend .ghost;
-  &:hover {
-    cursor: pointer;
-  }
-
-  &:hover {
-    .descriptionContainer {
-      opacity: 1;
-      transform: translateY(0);
+    @extend .ghost;
+    &:hover {
+        cursor: pointer;
     }
-  }
+
+    &:hover {
+        .descriptionContainer {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 }
 
 .header {
-  @include m-font-shadowed(28px, 400);
-  margin: 20px 0 5px 0;
+    @include m-font-shadowed(28px, 400);
+    margin: 20px 0 5px 0;
 }
 
 .descriptionContainer {
-  @include m-font-shadowed(18px, 400);
-  display: flex;
-  gap: 5px;
+    @include m-font-shadowed(18px, 400);
+    display: flex;
+    gap: 5px;
 }
-

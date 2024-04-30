@@ -8,10 +8,8 @@ interface Props {
 const BaseLayout: React.FC<Props> = ({children}) => {
     return (
         <>
-            <div className={styles.background}/>
-            <div className={styles.container}>
-                {children}
-            </div>
+            <div className={styles.background} />
+            <div className={styles.container}>{children}</div>
         </>
     );
 };

@@ -3,5 +3,4 @@ export enum Strings {
     NoPageFoundDescription = "The requested resource does not exist",
     GenericErrorMessage = "Opps!",
     GenericErrorDescription = "Some error occurred",
-
 }

@@ -7,13 +7,7 @@ interface Props extends React.InputHTMLAttributes<HTMLInputElement> {
     shadowed?: boolean;
 }
 
-const Input: React.FC<Props> = (
-    {
-        label,
-        setValue,
-        shadowed = false,
-        ...restProps
-    }) => {
+const Input: React.FC<Props> = ({label, setValue, shadowed = false, ...restProps}) => {
     return (
         <label className={styles.label}>
             <span className={styles.labelText}>{label}</span>

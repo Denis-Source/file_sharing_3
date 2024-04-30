@@ -8,20 +8,12 @@ interface Props extends React.HTMLAttributes<HTMLFormElement> {
     header?: string;
 }
 
-const FormCard: React.FC<Props> = (
-    {
-        message,
-        header,
-        errored = false,
-        ...restProps
-    }) => {
-
-    const [shaken, setShaken] = useState<boolean>(Boolean(errored))
+const FormCard: React.FC<Props> = ({message, header, errored = false, ...restProps}) => {
+    const [shaken, setShaken] = useState<boolean>(Boolean(errored));
     useEffect(() => {
-        message && setShaken(true)
-        setInterval(() => setShaken(false), 200)
-    }, [errored, message])
-
+        message && setShaken(true);
+        setInterval(() => setShaken(false), 200);
+    }, [errored, message]);
 
     return (
         <div className={shaken ? styles.containerShake : styles.container}>
@@ -29,7 +21,7 @@ const FormCard: React.FC<Props> = (
                 {header && <h1 className={styles.header}>{header}</h1>}
                 <span className={styles.errorMessage}>{message}</span>
             </div>
-            <form className={styles.form}{...restProps}/>
+            <form className={styles.form} {...restProps} />
         </div>
     );
 };

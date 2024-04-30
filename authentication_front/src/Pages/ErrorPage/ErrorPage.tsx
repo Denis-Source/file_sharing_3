@@ -8,18 +8,10 @@ interface Props {
     description: string | undefined;
 }
 
-const ErrorPage: React.FC<Props> = (
-    {
-        message,
-        description
-    }) => {
+const ErrorPage: React.FC<Props> = ({message, description}) => {
     return (
         <CenteredLayout>
-            <Announcement
-                animation={Animations.Shake}
-                header={message}
-                description={description}
-            />
+            <Announcement animation={Animations.Shake} header={message} description={description} />
         </CenteredLayout>
     );
 };

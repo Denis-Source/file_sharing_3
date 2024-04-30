@@ -9,9 +9,7 @@ interface Props {
 const CenteredLayout: React.FC<Props> = ({children}) => {
     return (
         <BaseLayout>
-            <div className={styles.container}>
-                {children}
-            </div>
+            <div className={styles.container}>{children}</div>
         </BaseLayout>
     );
 };
