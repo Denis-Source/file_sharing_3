@@ -2,13 +2,16 @@ import os
 import re
 from datetime import timedelta
 
+from cachetools import cached, TTLCache
+
 from exceptions import EnvironmentValueError
 
 DOMAIN_REGEX = r"^(((?!-))(xn--|_)?[a-z0-9-]{0,61}[a-z0-9]{1,1}\.)*(xn--)?" \
                r"([a-z0-9][a-z0-9\-]{0,60}|[a-z0-9-]{1,30}\.[a-z]{2,})$"
-
 PORT_REGEX = r"^([1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]" \
              r"{2}|655[0-2][0-9]|6553[0-5])$"
+
+ENV_CACHE_TTL_SECONDS = 10 * 60
 
 
 def set_env_key(key: str, value: str):
@@ -19,6 +22,7 @@ def set_env_key(key: str, value: str):
 
 
 # App
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_app_secret() -> str:
     """SECRET_KEY should be from 12 to 36 long and can contain any printable symbol"""
     regex = r"^[\x20-\x7E]{12,36}$"
@@ -31,6 +35,7 @@ def get_app_secret() -> str:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_develop_mode() -> bool:
     key = "APP_DEVELOP_MODE"
     value = os.getenv(key, "False")
@@ -39,6 +44,7 @@ def get_develop_mode() -> bool:
 
 
 # Passwords
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_password_min_length() -> int:
     key = "PASSWORD_MIN_LENGTH"
     value = os.getenv(key)
@@ -51,6 +57,7 @@ def get_password_min_length() -> int:
         raise EnvironmentValueError(key)
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_password_max_length() -> int:
     key = "PASSWORD_MAX_LENGTH"
     value = os.getenv(key, "16")
@@ -61,6 +68,7 @@ def get_password_max_length() -> int:
         raise EnvironmentValueError(key)
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_password_iterations() -> int:
     key = "PASSWORD_ITERATIONS"
     value = os.getenv(key, "300000")
@@ -76,6 +84,7 @@ def get_password_iterations() -> int:
 
 
 # PostgreSQL
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_postgres_host() -> str:
     """Should contain a valid domain"""
     key = "POSTGRES_HOST"
@@ -87,6 +96,7 @@ def get_postgres_host() -> str:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_postgres_port() -> str:
     """Should contain a valid port"""
     key = "POSTGRES_PORT"
@@ -98,6 +108,7 @@ def get_postgres_port() -> str:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_postgres_db() -> str:
     """Should contain postgres database name"""
     key = "POSTGRES_DB"
@@ -109,6 +120,7 @@ def get_postgres_db() -> str:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_postgres_user() -> str:
     """Should contain postgres user that can access the postgres database"""
     key = "POSTGRES_USER"
@@ -120,6 +132,7 @@ def get_postgres_user() -> str:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_postgres_password() -> str:
     """Should contain postgres password that is used to access the postgres database"""
     key = "POSTGRES_PASSWORD"
@@ -131,6 +144,7 @@ def get_postgres_password() -> str:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_frontend_url() -> str:
     key = "FRONTEND_URL"
     value = os.getenv(key)
@@ -141,6 +155,7 @@ def get_frontend_url() -> str:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_authentication_code_valid_minutes() -> int:
     key = "AUTHENTICATION_CODE_VALID_MINUTES"
     value = os.getenv(key, "5")
@@ -153,6 +168,7 @@ def get_authentication_code_valid_minutes() -> int:
     return value
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_access_token_valid() -> timedelta:
     key = "ACCESS_TOKEN_VALID_MINUTES"
     value = os.getenv(key, "30")
@@ -165,6 +181,7 @@ def get_access_token_valid() -> timedelta:
     return timedelta(minutes=value)
 
 
+@cached(cache=TTLCache(maxsize=1, ttl=ENV_CACHE_TTL_SECONDS))
 def get_refresh_token_valid() -> timedelta:
     key = "REFRESH_TOKEN_VALID_DAYS"
     value = os.getenv(key, "356")

@@ -9,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from api.auth.dependencies import authenticate
 from api.auth.views import AUTH_URL_NAME, AuthRoutes
-from env import get_frontend_url
+from app import app
+from env import get_frontend_url, get_develop_mode
 from models.client import Client
 from models.code import Code
 from models.user import User
@@ -270,21 +271,22 @@ async def test_token_code_no_redirect_uri(
 
 
 async def test_token_password_success(
+        fastapi_dep,
         mock_http_client: AsyncClient,
         mock_client: Client,
-        mock_user_with_password: tuple[User, str],
-        develop_mode_on: None
+        mock_user_with_password: tuple[User, str]
 ):
-    mock_user, password = mock_user_with_password
-    response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
-        data={
-            "username": mock_user.username,
-            "password": password,
-            "client_id": mock_client.id,
-            "client_secret": mock_client.secret
-        }
-    )
+    with fastapi_dep(app).override({get_develop_mode: lambda: True}):
+        mock_user, password = mock_user_with_password
+        response = await mock_http_client.post(
+            url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
+            data={
+                "username": mock_user.username,
+                "password": password,
+                "client_id": mock_client.id,
+                "client_secret": mock_client.secret
+            }
+        )
     response_json = response.json()
 
     assert response.status_code == status.HTTP_200_OK
@@ -293,21 +295,22 @@ async def test_token_password_success(
 
 
 async def test_token_password_development_mode_off(
+        fastapi_dep,
         mock_http_client: AsyncClient,
         mock_client: Client,
-        mock_user_with_password: tuple[User, str],
-        develop_mode_off: None
+        mock_user_with_password: tuple[User, str]
 ):
-    mock_user, password = mock_user_with_password
-    response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
-        data={
-            "username": mock_user.username,
-            "password": password,
-            "client_id": mock_client.id,
-            "client_secret": mock_client.secret
-        }
-    )
+    with fastapi_dep(app).override({get_develop_mode: lambda: False}):
+        mock_user, password = mock_user_with_password
+        response = await mock_http_client.post(
+            url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
+            data={
+                "username": mock_user.username,
+                "password": password,
+                "client_id": mock_client.id,
+                "client_secret": mock_client.secret
+            }
+        )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
 

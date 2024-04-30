@@ -1,7 +1,13 @@
 -r base.txt
 
-flake8~=7.0.0
-flake8-quotes~=3.3.2
-flake8-mutable~=1.2.0
-dlint~=0.14.1
-pep8-naming~=0.13.3
+
+pytest
+pytest_asyncio
+pytest-fastapi-deps
+httpx
+
+flake8
+flake8-quotes
+flake8-mutable
+dlint
+pep8-naming

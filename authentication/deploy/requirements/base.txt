@@ -4,12 +4,9 @@ sqlalchemy_utils
 asyncpg
 alembic
 
-pytest
-pytest_asyncio
-
+cachetools
 pyjwt
 
 python-multipart
 fastapi
 uvicorn[standard]
-httpx
