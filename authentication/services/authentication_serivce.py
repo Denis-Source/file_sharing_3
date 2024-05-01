@@ -10,6 +10,7 @@ from config import APP_NAME
 from env import get_app_secret, get_frontend_url, get_authentication_code_valid_minutes, get_access_token_valid, \
     get_refresh_token_valid
 from models.code import Code
+from models.scope import Scope
 from models.user import User
 from services.base import BaseService, ServiceError
 from services.client_service import ClientService
@@ -34,6 +35,7 @@ TOKEN_SUB = "sub"
 TOKEN_EXP = "exp"
 TOKEN_IAT = "iat"
 TOKEN_TYPE = "type"
+TOKEN_SCOPES: str = "scopes"
 
 
 class TokenTypes(str, Enum):
@@ -65,11 +67,15 @@ class AuthenticationService(BaseService):
     @staticmethod
     def generate_token(
             sub: str,
+            scopes: [Scope.Types] = None,
             type_: TokenTypes = TokenTypes.ACCESS,
             secret: str = None,
             **params) -> str:
         if not secret:
             secret = get_app_secret()
+
+        if not scopes:
+            scopes = []
 
         return jwt.encode(
             {
@@ -78,6 +84,7 @@ class AuthenticationService(BaseService):
                 TOKEN_IAT: datetime.utcnow().timestamp(),
                 TOKEN_EXP: AuthenticationService.get_expiration_date(type_).timestamp(),
                 TOKEN_TYPE: type_,
+                TOKEN_SCOPES: scopes,
                 **params
             },
             secret,
@@ -99,6 +106,9 @@ class AuthenticationService(BaseService):
             raise TokenError from e
 
         if TOKEN_SUB not in decoded_token or TOKEN_EXP not in decoded_token:
+            raise TokenError
+
+        if TOKEN_SCOPES not in decoded_token:
             raise TokenError
 
         if decoded_token.get(TOKEN_ISS) != APP_NAME:
@@ -140,7 +150,8 @@ class AuthenticationService(BaseService):
         access_token = self.generate_token(
             sub=user.username,
             type_=TokenTypes.ACCESS,
-            secret=secret
+            secret=secret,
+            scopes=[Scope.Types.UNRESTRICTED.value]
         )
         refresh = self.generate_token(
             sub=user.username,
@@ -168,6 +179,20 @@ class AuthenticationService(BaseService):
             raise AuthenticationError("User not found")
 
         return user
+
+    @staticmethod
+    def get_scopes(
+            token: str,
+            required_token_type=TokenTypes.ACCESS,
+            secret: str = None
+    ) -> list[Scope.Types]:
+        decoded_token = AuthenticationService.decode_token(
+            token=token,
+            required_type=required_token_type,
+            secret=secret
+        )
+
+        return decoded_token.get(TOKEN_SCOPES)
 
     async def authenticate_user(self, username: str, password: str) -> User:
         user_service = UserService(self.session)
@@ -254,6 +279,7 @@ class AuthenticationService(BaseService):
         access_token = self.generate_token(
             sub=code.client.user.username,
             type_=TokenTypes.ACCESS,
+            scopes=[scope.type for scope in code.client.scopes],
             secret=secret
         )
         refresh = self.generate_token(
@@ -291,7 +317,8 @@ class AuthenticationService(BaseService):
         access_token = self.generate_token(
             sub=user.username,
             type_=TokenTypes.ACCESS,
-            secret=secret
+            secret=secret,
+            scopes=[scope.type for scope in client.scopes]
         )
         refresh = self.generate_token(
             sub=user.username,

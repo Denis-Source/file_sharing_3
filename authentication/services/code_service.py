@@ -53,7 +53,7 @@ class CodeService(ModelService):
                 Code.value == value,
                 Code.client_id == client_id,
                 Code.redirect_uri == redirect_uri,
-                Code.is_used == False,
+                Code.is_used == False,  # noqa E712
                 Code.valid_until > datetime.now()
             )
         )

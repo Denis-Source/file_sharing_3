@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.base import FieldValidationError
 from models.client import Client
+from models.scope import Scope
 from models.user import User
 from tests.conftest import generate_mock_name
 
@@ -84,3 +85,12 @@ async def test_delete(test_session: AsyncSession, mock_client: Client):
     await test_session.execute(qs)
 
     assert mock_client not in await test_session.scalars(select(Client))
+
+
+async def test_scopes(test_session: AsyncSession, mock_client: Client, mock_scope: Scope):
+    mock_client.scopes.add(
+        mock_scope)
+    test_session.add(mock_client)
+    await test_session.commit()
+
+    assert mock_scope in mock_client.scopes

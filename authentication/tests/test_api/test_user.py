@@ -95,8 +95,6 @@ async def test_profile_unauthorized(
     response = await mock_http_client.get(
         url=USER_URL_NAME + UserRoutes.PROFILE
     )
-    response_json = response.json()
-
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
@@ -121,7 +119,6 @@ async def test_set_password_no_password(
         mock_user: User,
         mock_auth_header: dict
 ):
-    password = generate_mock_plain_password()
     response = await mock_http_client.post(
         url=USER_URL_NAME + UserRoutes.SET_PASSWORD,
         json={},

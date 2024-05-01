@@ -4,10 +4,11 @@ import pytest
 from sqlalchemy import func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models.client import Client
+from models.client import Client, ClientScope
+from models.scope import Scope
 from models.user import User
 from services.base import UniquenessError
-from services.client_service import ClientService
+from services.client_service import ClientService, InvalidScopeError
 from tests.conftest import generate_mock_name
 
 
@@ -23,6 +24,29 @@ async def test_create(test_session: AsyncSession, mock_user: User):
     assert await test_session.scalar(
         select(func.count())
         .where(Client.id == client.id)) == 1
+
+    await test_session.execute(delete(Client).where(Client.id == client.id))
+    await test_session.commit()
+
+
+async def test_create_with_scopes(test_session: AsyncSession, mock_user: User, mock_scope: Scope):
+    service = ClientService(test_session)
+    name = f"client_{generate_mock_name()}"
+
+    client = await service.create(
+        name=name,
+        user=mock_user,
+        scopes=[mock_scope.type]
+    )
+    assert client in await test_session.scalars(select(Client))
+
+    assert await test_session.scalar(
+        select(func.count())
+        .where(Client.id == client.id)) == 1
+    assert await test_session.scalar(
+        select(func.count())
+        .where(ClientScope.client_id == client.id, ClientScope.scope_id == mock_scope.id)
+    )
 
     await test_session.execute(delete(Client).where(Client.id == client.id))
     await test_session.commit()
@@ -90,3 +114,30 @@ async def test_delete(test_session: AsyncSession, mock_client: Client):
     assert mock_client not in await test_session.scalars(select(Client))
     assert await test_session.scalar(
         select(func.count()).where(Client.id == mock_client.id)) == 0
+
+
+async def test_set_scopes_success(test_session: AsyncSession, mock_client: Client, mock_scope: Scope):
+    service = ClientService(test_session)
+
+    await service.set_scopes(
+        instance=mock_client,
+        scopes=[mock_scope.type]
+    )
+
+    assert mock_scope in mock_client.scopes
+    assert await test_session.scalar(
+        select(func.count()).where(
+            ClientScope.scope_id == mock_scope.id and ClientScope.client_id == mock_client.id
+        )
+    ) == 1
+
+
+async def test_set_scopes_invalid_scope(test_session: AsyncSession, mock_client: Client, mock_scope: Scope):
+    service = ClientService(test_session)
+    non_existent_scope = "non_existent_scope"
+
+    with pytest.raises(InvalidScopeError):
+        await service.set_scopes(
+            instance=mock_client,
+            scopes=[non_existent_scope]
+        )

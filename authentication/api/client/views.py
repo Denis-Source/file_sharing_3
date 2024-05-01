@@ -8,6 +8,7 @@ from fastapi import status
 from api.client.schemas import RegisterClientRequest, RegisterClientResponse
 from api.dependencies import get_client_service, get_user_service
 from api.schemas import ErrorSchema
+from env import get_develop_mode
 from models.base import FieldValidationError
 from services.base import UniquenessError
 from services.client_service import ClientService
@@ -31,8 +32,11 @@ router = APIRouter(
 async def register(
         data: RegisterClientRequest,
         user_service: Annotated[UserService, Depends(get_user_service)],
-        client_service: Annotated[ClientService, Depends(get_client_service)]
+        client_service: Annotated[ClientService, Depends(get_client_service)],
+        develop_mode: Annotated[bool, Depends(get_develop_mode)]
 ) -> RegisterClientResponse:
+    if not develop_mode:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only available in the develop mode")
     user = await user_service.get_user_by_username(data.username)
     if not user:
         raise HTTPException(

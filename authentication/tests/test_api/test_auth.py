@@ -1,5 +1,7 @@
+from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlparse
 
+import jwt
 import pytest
 from fastapi import HTTPException
 from fastapi import status
@@ -10,11 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from api.auth.dependencies import authenticate
 from api.auth.views import AUTH_URL_NAME, AuthRoutes
 from app import app
-from env import get_frontend_url, get_develop_mode
+from config import APP_NAME
+from env import get_frontend_url, get_develop_mode, get_app_secret
 from models.client import Client
 from models.code import Code
 from models.user import User
-from services.authentication_serivce import AuthenticationService
+from services.authentication_serivce import AuthenticationService, TOKEN_SUB, TOKEN_ISS, TOKEN_IAT, TOKEN_EXP, \
+    TOKEN_TYPE, TOKEN_SCOPES, TokenTypes, JWT_ALGORITHM
 from tests.conftest import get_mock_uri
 
 
@@ -29,6 +33,30 @@ async def test_authenticate_success(
         token=access_token,
         auth_service=auth_service
     )
+
+
+async def test_authenticate_no_required_scope(
+        test_session: AsyncSession,
+        mock_user: User
+):
+    decoded_token = {
+        TOKEN_SUB: mock_user.username,
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() + timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["wrong_scope"]}
+    invalid_token = jwt.encode(
+        decoded_token,
+        get_app_secret(),
+        algorithm=JWT_ALGORITHM
+    )
+    auth_service = AuthenticationService(test_session)
+    with pytest.raises(HTTPException):
+        await authenticate(
+            token=invalid_token,
+            auth_service=auth_service
+        )
 
 
 async def test_authenticate_invalid_token(
@@ -300,8 +328,8 @@ async def test_token_password_development_mode_off(
         mock_client: Client,
         mock_user_with_password: tuple[User, str]
 ):
+    mock_user, password = mock_user_with_password
     with fastapi_dep(app).override({get_develop_mode: lambda: False}):
-        mock_user, password = mock_user_with_password
         response = await mock_http_client.post(
             url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
             data={
@@ -316,70 +344,78 @@ async def test_token_password_development_mode_off(
 
 
 async def test_token_password_no_username(
+        fastapi_dep,
         mock_http_client: AsyncClient,
         mock_client: Client,
         mock_user_with_password: tuple[User, str]
 ):
     mock_user, password = mock_user_with_password
-    response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
-        data={
-            "password": password,
-            "client_id": mock_client.id,
-            "client_secret": mock_client.secret
-        }
-    )
+    with fastapi_dep(app).override({get_develop_mode: lambda: True}):
+        response = await mock_http_client.post(
+            url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
+            data={
+                "password": password,
+                "client_id": mock_client.id,
+                "client_secret": mock_client.secret
+            }
+        )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 async def test_token_password_no_password(
+        fastapi_dep,
         mock_http_client: AsyncClient,
         mock_client: Client,
         mock_user_with_password: tuple[User, str]
 ):
     mock_user, password = mock_user_with_password
-    response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
-        data={
-            "username": mock_user.username,
-            "client_id": mock_client.id,
-            "client_secret": mock_client.secret
-        }
-    )
+    with fastapi_dep(app).override({get_develop_mode: lambda: True}):
+        response = await mock_http_client.post(
+            url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
+            data={
+                "username": mock_user.username,
+                "client_id": mock_client.id,
+                "client_secret": mock_client.secret
+            }
+        )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 async def test_token_password_no_client_id(
+        fastapi_dep,
         mock_http_client: AsyncClient,
         mock_client: Client,
         mock_user_with_password: tuple[User, str]
 ):
     mock_user, password = mock_user_with_password
-    response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
-        data={
-            "username": mock_user.username,
-            "password": password,
-            "client_secret": mock_client.secret
-        }
-    )
+    with fastapi_dep(app).override({get_develop_mode: lambda: True}):
+        response = await mock_http_client.post(
+            url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
+            data={
+                "username": mock_user.username,
+                "password": password,
+                "client_secret": mock_client.secret
+            }
+        )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 async def test_token_password_no_client_secret(
+        fastapi_dep,
         mock_http_client: AsyncClient,
         mock_client: Client,
         mock_user_with_password: tuple[User, str]
 ):
     mock_user, password = mock_user_with_password
-    response = await mock_http_client.post(
-        url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
-        data={
-            "username": mock_user.username,
-            "password": password,
-            "client_id": mock_client.id,
-        }
-    )
+    with fastapi_dep(app).override({get_develop_mode: lambda: True}):
+        response = await mock_http_client.post(
+            url=AUTH_URL_NAME + AuthRoutes.TOKEN_PASSWORD,
+            data={
+                "username": mock_user.username,
+                "password": password,
+                "client_id": mock_client.id,
+            }
+        )
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
@@ -482,7 +518,7 @@ async def test_verify_wrong_token(
 ):
     response = await mock_http_client.post(
         AUTH_URL_NAME + AuthRoutes.VERIFY,
-        headers={"Authorization": f"Bearer invalid_token"}
+        headers={"Authorization": "Bearer invalid_token"}
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED

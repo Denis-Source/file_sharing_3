@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 import jwt
@@ -10,9 +10,10 @@ from config import APP_NAME
 from env import get_frontend_url, get_access_token_valid, get_refresh_token_valid, get_app_secret
 from models.client import Client
 from models.code import Code
+from models.scope import Scope
 from models.user import User
 from services.authentication_serivce import AuthenticationService, JWT_ALGORITHM, TokenError, AuthenticationError, \
-    TokenTypes
+    TokenTypes, TOKEN_SCOPES, TOKEN_SUB, TOKEN_ISS, TOKEN_IAT, TOKEN_EXP, TOKEN_TYPE
 from services.user_service import UserService
 from tests.conftest import generate_mock_password, get_mock_uri
 
@@ -45,132 +46,184 @@ def test_encode(mock_user: User):
         JWT_ALGORITHM
     )
 
-    assert decoded_token.get("sub") == mock_user.username
+    assert decoded_token.get(TOKEN_SUB) == mock_user.username
 
 
 def test_decode_success():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJpc3MiOiJhdXRoZW50aWNhdGlvbl9zZXJ" \
-            "2aWNlIiwic3ViIjoxMjM0NTY3ODkwLCJpYXQ" \
-            "iOjE3MTE2NzExMDAsImV4cCI6MjAwMDAwMDA" \
-            "wMDB9" \
-            ".ZI3oZpKDUSqWeYYnG7UXfNsdEc9W9Mq9M4x" \
-            "DWQmyXyE"
-    sub = 1234567890
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() + timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["test_scope"]}
 
-    decoded_token = AuthenticationService.decode_token(
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
+
+    assert decoded_token == AuthenticationService.decode_token(
         token=token,
         secret=secret
     )
-    assert sub == decoded_token.get("sub")
 
 
 def test_decode_success_required_type():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJpc3MiOiJhdXRoZW50aWNhdGlvbl9zZXJ" \
-            "2aWNlIiwic3ViIjoxMjM0NTY3ODkwLCJpYXQ" \
-            "iOjE3MTE2NzExMDAsImV4cCI6MjAwMDAwMDA" \
-            "wMDAsInR5cGUiOiJhY2Nlc3MifQ" \
-            ".gvEFhc3sARluVYaT6SNJFfX14b5UtYH7Tg7" \
-            "_7fhIPnw"
-    sub = 1234567890
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() + timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     decoded_token = AuthenticationService.decode_token(
         token=token,
         required_type=TokenTypes.ACCESS,
         secret=secret
     )
-    assert sub == decoded_token.get("sub")
+    assert decoded_token == AuthenticationService.decode_token(
+        token=token,
+        secret=secret
+    )
 
 
 def test_decode_invalid_signature():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJpc3MiOiJtZXRhZGF0YV9zZXJ2aWNlIiw" \
-            "ic3ViIjoxMjM0NTY3ODkwLCJpYXQiOjE3MTE" \
-            "2NzExMDAsImV4cCI6MjAwMDAwMDAwMDB9" \
-            ".HXHmIoegomXWsgWOVGlh-QmIzu_Hld68LywdCD7AjCZ"
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() + timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     with pytest.raises(TokenError):
         AuthenticationService.decode_token(
             token=token,
-            secret=secret
+            required_type=TokenTypes.ACCESS,
+            secret="different_secret"
         )
 
 
 def test_decode_invalid_exp():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJpc3MiOiJtZXRhZGF0YV9zZXJ2aWNlIiw" \
-            "ic3ViIjoxMjM0NTY3ODkwLCJpYXQiOjE3MTE" \
-            "2NzExMDAsImV4cCI6MH0" \
-            ".VdcY5GZkIT2MLPPRZ_ECtTed9m_LbeA5x0Jit_WS5Os"
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() - timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     with pytest.raises(TokenError):
         AuthenticationService.decode_token(
             token=token,
+            required_type=TokenTypes.ACCESS,
             secret=secret
         )
 
 
 def test_decode_not_required_type():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJpc3MiOiJhdXRoZW50aWNhdGlvbl9zZXJ" \
-            "2aWNlIiwic3ViIjoxMjM0NTY3ODkwLCJpYXQ" \
-            "iOjE3MTE2NzExMDAsImV4cCI6MjAwMDAwMDA" \
-            "wMDAsInR5cGUiOiJhY2Nlc3MifQ" \
-            ".gvEFhc3sARluVYaT6SNJFfX14b5UtYH7Tg7" \
-            "_7fhIPnw"
-    sub = 1234567890
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() - timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.REFRESH,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     with pytest.raises(TokenError):
         AuthenticationService.decode_token(
             token=token,
-            required_type=TokenTypes.REFRESH,
+            required_type=TokenTypes.ACCESS,
             secret=secret
         )
 
 
 def test_decode_missing_exp():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJpc3MiOiJtZXRhZGF0YV9zZXJ2aWNlIiw" \
-            "ic3ViIjoxMjM0NTY3ODkwLCJpYXQiOjE3MTE" \
-            "2NzExMDB9" \
-            ".ZGcqMyiTpKY9A2yjQ4XTokiLXKDmKIQYZmqEp-Ce-8I"
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     with pytest.raises(TokenError):
         AuthenticationService.decode_token(
             token=token,
+            required_type=TokenTypes.ACCESS,
             secret=secret
         )
 
 
 def test_decode_invalid_iss():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJzdWIiOjEyMzQ1Njc4OTAsImlhdCI6MTc" \
-            "xMTY3MTEwMCwiZXhwIjoyMDAwMDAwMDAwMH0" \
-            ".N3L45Fx4LrhqzdgO5TMYaDkmU-OKHYDUjUDU36wHXug"
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_ISS: "different_issuer",
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_TYPE: TokenTypes.REFRESH,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     with pytest.raises(TokenError):
         AuthenticationService.decode_token(
             token=token,
+            required_type=TokenTypes.ACCESS,
             secret=secret
         )
 
 
 def test_decode_missing_iss():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJpc3MiOiJ3cm9uZ19pc3MiLCJzdWIiOjE" \
-            "yMzQ1Njc4OTAsImlhdCI6MTcxMTY3MTEwMCw" \
-            "iZXhwIjoyMDAwMDAwMDAwMH0" \
-            ".1VF2pRozuF0p7bRN7aU5Ed4MPYOADnrkxbqCWM9_L9Y"
+    decoded_token = {
+        TOKEN_SUB: 1234567890,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() + timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     with pytest.raises(TokenError):
         AuthenticationService.decode_token(
             token=token,
@@ -195,10 +248,18 @@ def test_decode_invalid_format():
 
 def test_decode_no_sub():
     secret = "test_secret"
-    token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" \
-            ".eyJuYW1lIjoiSm9obiBEb2UiLCJpYXQiOjE1MTYyMzkwMjJ9" \
-            ".nfxWdUayk54niAULlEOjvac-fUdltdWIYY1sg1Yd5Ts"
+    decoded_token = {
+        TOKEN_ISS: APP_NAME,
+        TOKEN_IAT: datetime.utcnow().timestamp(),
+        TOKEN_EXP: (datetime.utcnow() + timedelta(days=10)).timestamp(),
+        TOKEN_TYPE: TokenTypes.ACCESS,
+        TOKEN_SCOPES: ["test_scope"]}
 
+    token = jwt.encode(
+        decoded_token,
+        secret,
+        algorithm=JWT_ALGORITHM
+    )
     with pytest.raises(TokenError):
         AuthenticationService.decode_token(
             token=token,
@@ -224,7 +285,7 @@ async def test_create_oauth_token_success(test_session: AsyncSession, mock_user_
         secret,
         JWT_ALGORITHM
     )
-    assert decoded_token.get("sub") == mock_client.user.username
+    assert decoded_token.get(TOKEN_SUB) == mock_client.user.username
 
 
 async def test_create_oauth_token_user_not_exist(test_session: AsyncSession, mock_client: Client):
@@ -321,11 +382,12 @@ async def test_get_user_by_token_success(test_session: AsyncSession, mock_user: 
     auth_service = AuthenticationService(test_session)
     token = jwt.encode(
         {
-            "sub": mock_user.username,
-            "iss": APP_NAME,
-            "type": TokenTypes.ACCESS,
-            "iat": 1711671100,
-            "exp": 20000000000
+            TOKEN_SUB: mock_user.username,
+            TOKEN_ISS: APP_NAME,
+            TOKEN_TYPE: TokenTypes.ACCESS,
+            TOKEN_IAT: 1711671100,
+            TOKEN_EXP: 20000000000,
+            TOKEN_SCOPES: []
         },
         secret,
         JWT_ALGORITHM
@@ -343,17 +405,18 @@ async def test_get_user_by_token_wrong_type(test_session: AsyncSession, mock_use
     auth_service = AuthenticationService(test_session)
     token = jwt.encode(
         {
-            "sub": mock_user.username,
-            "iss": APP_NAME,
-            "type": TokenTypes.REFRESH,
-            "iat": 1711671100,
-            "exp": 20000000000
+            TOKEN_SUB: mock_user.username,
+            TOKEN_ISS: APP_NAME,
+            TOKEN_TYPE: TokenTypes.REFRESH,
+            TOKEN_IAT: 1711671100,
+            TOKEN_EXP: 20000000000,
+            TOKEN_SCOPES: []
         },
         secret,
         JWT_ALGORITHM
     )
     with pytest.raises(AuthenticationError):
-        user = await auth_service.get_user_by_token(
+        await auth_service.get_user_by_token(
             token=token,
             secret=secret
         )
@@ -365,10 +428,12 @@ async def test_get_user_by_token_user_not_exist(test_session: AsyncSession, mock
     non_existent_username = "non_existent_username"
     token = jwt.encode(
         {
-            "sub": non_existent_username,
-            "iss": APP_NAME,
-            "iat": 1711671100,
-            "exp": 20000000000
+            TOKEN_SUB: non_existent_username,
+            TOKEN_ISS: APP_NAME,
+            TOKEN_TYPE: TokenTypes.REFRESH,
+            TOKEN_IAT: 1711671100,
+            TOKEN_EXP: 20000000000,
+            TOKEN_SCOPES: []
         },
         secret,
         JWT_ALGORITHM
@@ -526,14 +591,18 @@ async def test_create_code_token_success(test_session: AsyncSession, mock_client
         value=mock_code.value,
         secret=secret
     )
-    for token in [access_token, refresh_token]:
-        decoded_token = jwt.decode(
-            token,
-            secret,
-            JWT_ALGORITHM
-        )
-        assert decoded_token.get("sub") == mock_client.user.username
-
+    decoded_access_token = jwt.decode(
+        access_token,
+        secret,
+        JWT_ALGORITHM
+    )
+    decoded_refresh_token = jwt.decode(
+        refresh_token,
+        secret,
+        JWT_ALGORITHM
+    )
+    assert decoded_access_token.get(TOKEN_SUB) == decoded_refresh_token.get(TOKEN_SUB) == mock_client.user.username
+    assert set(decoded_access_token.get(TOKEN_SCOPES)) == set([scope.type for scope in mock_client.scopes])
     assert mock_code.is_used
 
 
@@ -546,13 +615,18 @@ async def test_refresh_pair_success(test_session: AsyncSession, mock_client: Cli
         client_id=mock_client.id,
         client_secret=mock_client.secret
     )
-    for token in [access_token, refresh_token]:
-        decoded_token = jwt.decode(
-            token,
-            get_app_secret(),
-            JWT_ALGORITHM
-        )
-        assert decoded_token.get("sub") == mock_client.user.username
+    decoded_access_token = jwt.decode(
+        access_token,
+        get_app_secret(),
+        JWT_ALGORITHM
+    )
+    decoded_refresh_token = jwt.decode(
+        refresh_token,
+        get_app_secret(),
+        JWT_ALGORITHM
+    )
+    assert decoded_access_token.get(TOKEN_SUB) == decoded_refresh_token.get(TOKEN_SUB) == mock_client.user.username
+    assert set(decoded_access_token.get(TOKEN_SCOPES)) == set([scope.type for scope in mock_client.scopes])
 
 
 async def test_refresh_pair_wrong_token_type(test_session: AsyncSession, mock_client: Client,
@@ -594,3 +668,10 @@ async def test_refresh_pair_wrong_client_id(test_session: AsyncSession, mock_cli
             client_id=non_existent_client_id,
             client_secret=mock_client.secret
         )
+
+
+async def test_get_scopes_success(test_session: AsyncSession, mock_token_pair: tuple[str, str]):
+    access_token, _ = mock_token_pair
+    auth_service = AuthenticationService(test_session)
+    scopes = auth_service.get_scopes(access_token)
+    assert set(scopes) == {Scope.Types.UNRESTRICTED.value}

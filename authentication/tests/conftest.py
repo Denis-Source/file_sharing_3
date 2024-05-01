@@ -12,10 +12,12 @@ from env import get_authentication_code_valid_minutes
 from migrations.operations import migrate_head
 from models.client import Client
 from models.code import Code
+from models.scope import Scope
 from models.user import User
 from services.authentication_serivce import AuthenticationService
 from services.client_service import ClientService
 from services.code_service import CodeService
+from services.scope_service import ScopeService
 from services.user_service import UserService
 
 
@@ -114,11 +116,12 @@ async def another_mock_user_with_password(test_session: AsyncSession, another_mo
 
 
 @pytest.fixture
-async def mock_client(test_session: AsyncSession, mock_user: User) -> Client:
+async def mock_client(test_session: AsyncSession, mock_user: User, mock_scope: Scope) -> Client:
     service = ClientService(test_session)
     client = await service.create(
         name=f"client_{generate_mock_name()}",
-        user=mock_user
+        user=mock_user,
+        scopes=[mock_scope.type]
     )
 
     client_id = client.id
@@ -129,6 +132,20 @@ async def mock_client(test_session: AsyncSession, mock_user: User) -> Client:
 
 def get_mock_uri():
     return "https://example.com/callback/"
+
+
+@pytest.fixture
+async def mock_scope(test_session: AsyncSession):
+    service = ScopeService(test_session)
+    type_ = f"scope-{generate_mock_name()}"
+    scope = await service.create(
+        type_=type_
+    )
+
+    scope_id = scope.id
+    yield scope
+
+    await service.delete(scope_id)
 
 
 @pytest.fixture
@@ -154,7 +171,7 @@ async def mock_token_pair(test_session: AsyncSession, mock_user_with_password: U
         username=mock_user.username,
         password=password,
         client_id=mock_client.id,
-        client_secret=mock_client.secret
+        client_secret=mock_client.secret,
     )
 
 

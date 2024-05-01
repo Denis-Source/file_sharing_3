@@ -2,10 +2,13 @@ from datetime import datetime
 
 from pydantic import BaseModel as BaseSchema
 
+from models.scope import Scope
+
 
 class RegisterClientRequest(BaseSchema):
     username: str
     client_name: str
+    scopes: list[Scope.Types]
 
 
 class RegisterClientResponse(BaseSchema):

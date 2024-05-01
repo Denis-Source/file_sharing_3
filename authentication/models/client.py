@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from typing import Set
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship, validates
@@ -8,6 +9,17 @@ from models.base import Base, FieldValidationError
 from models.utils import generate_uuid
 
 USERNAME_REGEX = r"^[a-zA-Z0-9_]{10,255}$"
+
+
+class ClientScope(Base):
+    __tablename__ = "client_scope"
+
+    client_id: Mapped[int] = mapped_column(
+        ForeignKey("clients.id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    scope_id: Mapped[int] = mapped_column(
+        ForeignKey("scopes.id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    acquired_at: Mapped[datetime] = mapped_column(
+        default=datetime.now)
 
 
 class Client(Base):
@@ -31,6 +43,8 @@ class Client(Base):
         back_populates="clients")
     codes: Mapped["Code"] = relationship(
         back_populates="client")
+    scopes: Mapped[Set["Scope"]] = relationship(
+        secondary="client_scope", back_populates="clients")
 
     @validates("name")
     def validate_username(self, key, username):
