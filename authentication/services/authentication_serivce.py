@@ -151,7 +151,7 @@ class AuthenticationService(BaseService):
             sub=user.username,
             type_=TokenTypes.ACCESS,
             secret=secret,
-            scopes=[Scope.Types.UNRESTRICTED.value]
+            scopes=[Scope.Types.UNRESTRICTED]
         )
         refresh = self.generate_token(
             sub=user.username,

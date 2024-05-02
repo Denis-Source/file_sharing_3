@@ -46,6 +46,7 @@ async def register(
         client = await client_service.create(
             user=user,
             name=data.client_name,
+            scopes=data.scopes
         )
     except (UniquenessError, FieldValidationError) as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

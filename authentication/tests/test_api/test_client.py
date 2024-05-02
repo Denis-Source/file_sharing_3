@@ -20,7 +20,7 @@ async def test_create_success(
             json={
                 "username": mock_user.username,
                 "client_name": generate_mock_name(),
-                "scopes": [Scope.Types.UNRESTRICTED.value]
+                "scopes": [Scope.Types.UNRESTRICTED]
             }
         )
     response_json = response.json()
@@ -42,7 +42,7 @@ async def test_create_develop_mode_off(
             json={
                 "username": mock_user.username,
                 "client_name": generate_mock_name(),
-                "scopes": [Scope.Types.UNRESTRICTED.value]
+                "scopes": [Scope.Types.UNRESTRICTED]
             }
         )
     assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -57,7 +57,7 @@ async def test_create_no_username(
             url=CLIENT_URL_NAME + ClientRoutes.CREATE,
             json={
                 "client_name": generate_mock_name(),
-                "scopes": [Scope.Types.UNRESTRICTED.value]
+                "scopes": [Scope.Types.UNRESTRICTED]
             }
         )
 
@@ -74,7 +74,7 @@ async def test_create_no_client_name(
             url=CLIENT_URL_NAME + ClientRoutes.CREATE,
             json={
                 "username": mock_user.username,
-                "scopes": [Scope.Types.UNRESTRICTED.value]
+                "scopes": [Scope.Types.UNRESTRICTED]
             }
         )
 
@@ -91,7 +91,7 @@ async def test_create_not_existent_username(
             json={
                 "username": "non_existent_username",
                 "client_name": generate_mock_name(),
-                "scopes": [Scope.Types.UNRESTRICTED.value]
+                "scopes": [Scope.Types.UNRESTRICTED]
             }
         )
 

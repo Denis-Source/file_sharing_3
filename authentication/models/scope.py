@@ -7,7 +7,7 @@ from models.base import Base
 
 
 class Scope(Base):
-    class Types(Enum):
+    class Types(str, Enum):
         UNRESTRICTED = "unrestricted"
         PROFILE_READ = "profile-read"
         PROFILE_WRITE = "profile-write"

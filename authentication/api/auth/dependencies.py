@@ -16,7 +16,8 @@ async def authenticate(
         auth_service: Annotated[AuthenticationService, Depends(get_auth_service)]
 ) -> User:
     try:
-        if Scope.Types.UNRESTRICTED.value not in auth_service.get_scopes(token):
+        scopes = auth_service.get_scopes(token)
+        if Scope.Types.UNRESTRICTED not in scopes or Scope.Types.PROFILE_WRITE in scopes:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str("No required scope"))
 
         return await auth_service.get_user_by_token(token)
