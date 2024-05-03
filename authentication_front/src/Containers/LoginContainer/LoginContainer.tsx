@@ -36,7 +36,7 @@ const initialQsState: QsState = {
 };
 
 enum Strings {
-    Header = "Header",
+    Header = "Sign in",
 
     UsernameInvalidated = "Incorrect username",
     UsernameLabel = "Username",
